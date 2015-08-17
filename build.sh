@@ -34,6 +34,7 @@ MINGWCROSS64=FALSE
 PPCCROSS=FALSE
 JOBS_IF_PARALLEL=4
 MAX_LOAD_IF_PARALLEL=4.0
+CONFPREFIX=
 
 while [ "$1" != "" ] ; do
   if [ "$1" = "--make" ] ;
@@ -48,6 +49,8 @@ while [ "$1" != "" ] ; do
   then PPCCROSS=TRUE ;
   elif [ "$1" = "--parallel" ] ;
   then MAKE="$MAKE -j $JOBS_IF_PARALLEL -l $MAX_LOAD_IF_PARALLEL" ;
+  elif [ "${1%%=*}" = "--prefix" ] ;
+  then CONFPREFIX="$1" ;
   fi ;
   shift ;
 done
@@ -115,7 +118,7 @@ cd "$B"
 
 if [ "$ONLY_MAKE" = "FALSE" ]
 then
-../source/configure  $CONFHOST \
+../source/configure  $CONFHOST $CONFPREFIX \
     --disable-all-pkgs \
     --disable-shared    \
     --disable-largefile \

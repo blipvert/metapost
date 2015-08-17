@@ -13,18 +13,20 @@
       
 
 # try to find gnu make; we may need it
-MAKE=make;
-if make -v 2>&1| grep "GNU Make" >/dev/null
-then 
-  echo "Your make is a GNU-make; I will use that"
-elif gmake -v >/dev/null 2>&1
-then
-  MAKE=gmake;
-  export MAKE;
-  echo "You have a GNU-make installed as gmake; I will use that"
-else
-  echo "I can't find a GNU-make; I'll try to use make and hope that works." 
-  echo "If it doesn't, please install GNU-make."
+if [ -z "$MAKE" ]; then
+  MAKE=make;
+  if make -v 2>&1| grep "GNU Make" >/dev/null
+  then 
+    echo "Your make is a GNU-make; I will use that"
+  elif gmake -v >/dev/null 2>&1
+  then
+    MAKE=gmake;
+    export MAKE;
+    echo "You have a GNU-make installed as gmake; I will use that"
+  else
+    echo "I can't find a GNU-make; I'll try to use make and hope that works." 
+    echo "If it doesn't, please install GNU-make."
+  fi
 fi
 
 ONLY_MAKE=FALSE

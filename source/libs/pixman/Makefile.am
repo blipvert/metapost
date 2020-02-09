@@ -1,7 +1,9 @@
+## $Id: Makefile.am 43567 2017-03-21 17:43:10Z karl $
 ## Proxy Makefile.am to build pixman for TeX Live.
 ##
-##   Copyright (C) 2012 Taco Hoekwater <taco@metatex.org>
-##   Copyright (C) 2012-2015 Peter Breitenlohner <tex-live@tug.org>
+##   Copyright 2016-2017 Karl Berry <tex-live@tug.org>
+##   Copyright 2012-2015 Peter Breitenlohner <tex-live@tug.org>
+##   Copyright 2012 Taco Hoekwater <taco@metatex.org>
 ##
 ##   This file is free software; the copyright holder
 ##   gives unlimited permission to copy and/or distribute it,
@@ -13,7 +15,7 @@ EXTRA_DIST = $(PIXMAN_TREE)
 
 ## Changes applied to the original source tree
 ##
-EXTRA_DIST += $(PIXMAN_TREE)-PATCHES
+EXTRA_DIST += TLpatches
 
 PIXMAN_SRC = $(PIXMAN_TREE)/pixman
 
@@ -37,6 +39,7 @@ check_PROGRAMS = pixtest
 dist_check_SCRIPTS = pixman.test
 TESTS = pixman.test
 endif build
+pixman.log: pixtest$(EXEEXT)
 
 pixtest_SOURCES = pixtest.c
 

@@ -1,5 +1,7 @@
+# $Id: kpse-setup.m4 49495 2018-12-24 23:17:30Z karl $
 # Private macros for the TeX Live (TL) tree.
-# Copyright (C) 2009-2015 Peter Breitenlohner <tex-live@tug.org>
+# Copyright 2017-2018 Karl Berry <tex-live@tug.org>
+# Copyright 2009-2015 Peter Breitenlohner <tex-live@tug.org>
 #
 # This file is free software; the copyright holder
 # gives unlimited permission to copy and/or distribute it,
@@ -8,10 +10,11 @@
 # KPSE_SETUP(TOP-LEVEL)
 # ---------------------
 # Initialize path prefix kpse_TL to top-level TeX Live (TL) directory.
-# Sinclude all withenable.ac files providing:
-#   configure options --with-system-LIB, --with-LIB-includes, and --with-LIB-libdir
-#     for libraries
-#   configure option --disable-PKG or --enable-PKG for programs
+# Sinclude all pkgdir/ac/withenable.ac files, which are supposed to provide:
+#   configure options for libraries:
+#     --with-system-LIB --with-LIB-includes --with-LIB-libdir
+#   configure options for programs:
+#     --disable-PROG --enable-PROG
 #   additional program specific configure options (if any)
 #   library dependencies for programs and libraries
 AC_DEFUN([KPSE_SETUP], [dnl
@@ -53,9 +56,9 @@ AS_CASE([$enable_libtool_hack],
                    [enable_libtool_hack=no],
                  [enable_libtool_hack=yes])
          ac_configure_args="$ac_configure_args '--enable-libtool-hack=$enable_libtool_hack'"])
-AS_CASE([$enable_shared],
-        [no], [:],
-        [yes ], [AS_IF([test "x$enable_native_texlive_build" = xyes],
+AS_CASE([$enable_shared:$host_os],
+        [no:* | yes:mingw* | yes:cygwin*], [:],
+        [yes:* ], [AS_IF([test "x$enable_native_texlive_build" = xyes],
                        [AC_MSG_ERROR([you can not use a shared Kpathsea library for a native TeX Live build])])],
         [enable_shared=no
          ac_configure_args="$ac_configure_args '--disable-shared'"])
@@ -81,12 +84,14 @@ AS_CASE([$with_x:$kpse_cv_have_win32],
         [with_x=no
          AC_MSG_NOTICE([WIN32 -> `--without-x'])
          ac_configure_args="$ac_configure_args '--without-x'"])
-AS_CASE([$enable_luajittex],
+AC_FOREACH([Kpse_Pkg], [luajittex mfluajit], [dnl
+AS_CASE([$enable_]Kpse_Pkg,
         [yes | no], [:],
           [AS_CASE([$host],
-                   [alpha* | sparc* | x86_64-*-cygwin | powerpc-*-darwin* ],
-                     [AC_MSG_NOTICE([$host -> `--disable-luajittex'])
-                      ac_configure_args="$ac_configure_args '--disable-luajittex'"])])        
+                   [alpha* | sparc* | x86_64-*-solaris* | powerpc-*-darwin* ],
+                     [AC_MSG_NOTICE([$host -> `--disable-]Kpse_Pkg['])
+                      ac_configure_args="$ac_configure_args '--disable-]Kpse_Pkg['"])])
+])
 KPSE_FOR_PKGS([utils], [m4_sinclude(kpse_TL[utils/]Kpse_Pkg[/ac/withenable.ac])])
 KPSE_FOR_PKGS([texk], [m4_sinclude(kpse_TL[texk/]Kpse_Pkg[/ac/withenable.ac])])
 KPSE_FOR_PKGS([libs], [m4_sinclude(kpse_TL[libs/]Kpse_Pkg[/ac/withenable.ac])])
@@ -260,11 +265,17 @@ m4_popdef([Kpse_add])[]dnl
 # _KPSE_RECURSE(LIST, TEXT, COND, [PREFIX])
 # -----------------------------------------
 # Internal subroutine.  Determine which of the libraries or programs in
-# kpse_LIST_pkgs to build, and set output variables MAKE_SUBDIRS and
-# CONF_SUBDIRS.  Cause 'make dist', 'configure -hr', and 'autoreconf'
-# to recurse into all existing ones.
+# kpse_LIST_pkgs to build: if a package's source directory contains a
+# configure script, then add to CONF_SUBDIRS.  If COND is true, also add
+# to MAKE_SUBDIRS.  PREFIX, if present, is prepended to the package name
+# for the directory.
+# 
+# Thus if a directory has a configure script, the configure must succeed,
+# even if the package has been disabled. This is suboptimal, but see below.
+# 
 m4_define([_KPSE_RECURSE], [dnl
 AC_MSG_CHECKING([for $2 to build])
+echo 'tldbg:[$0] called: list=[$1], text=[$2], cond=[$3], prefix=[$4].' >&AS_MESSAGE_LOG_FD
 MAKE_SUBDIRS=
 CONF_SUBDIRS=
 KPSE_FOR_PKGS([$1], [dnl
@@ -272,13 +283,30 @@ m4_ifdef([have_]Kpse_pkg, [dnl
 if test -x $srcdir/$4Kpse_Pkg/configure; then
   $3 && Kpse_add([MAKE_SUBDIRS])
   Kpse_add([CONF_SUBDIRS])
-  if false; then
-    AC_CONFIG_SUBDIRS($4Kpse_Pkg)
-  fi
 fi
 ])[]dnl m4_ifdef
 ])
 AC_SUBST([MAKE_SUBDIRS])[]dnl
 AC_SUBST([CONF_SUBDIRS])[]dnl
 AC_MSG_RESULT([$MAKE_SUBDIRS])[]dnl
-]) # _KPSE_RECURSE
+dnl
+dnl Historic (and current) method: assume all directories present will be
+dnl configured, but only make if the package is enabled.  This works in
+dnl the cut-down pdftex source tree, but means that configure always has
+dnl to succeed; not desirable in, e.g., 2017 when dvisvgm newly required
+dnl C++11. But for 2018, all kinds of other things also require C++11, so
+dnl might as well go back to it instead of debugging further.
+dnl #old if test -x $srcdir/$4Kpse_Pkg/configure; then
+dnl #old   $3 && Kpse_add([MAKE_SUBDIRS])
+dnl #old   Kpse_add([CONF_SUBDIRS])
+dnl #old fi
+dnl
+dnl new (and not used) method: don't try to configure if a package has
+dnl been disabled, even if the directory exists. This is more intuitive,
+dnl but does not work in the cut-down pdftex source tree.
+dnl #new if test -x $srcdir/$4Kpse_Pkg/configure && $3; then
+dnl #new   Kpse_add([CONF_SUBDIRS])
+dnl #new   Kpse_add([MAKE_SUBDIRS])
+dnl #new fi
+dnl 
+]) dnl _KPSE_RECURSE

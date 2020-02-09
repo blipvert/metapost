@@ -1,10 +1,12 @@
+## $Id: Makefile.am 48591 2018-09-05 21:30:41Z lscarso $
 ## Makefile.am for the TeX Live subdirectory texk/web2c/.
 ##
-## Copyright (C) 2009-2015 Peter Breitenlohner <tex-live@tug.org>
+## Copyright 2017      Karl Berry <tex-live@tug.org>
+## Copyright 2009-2015 Peter Breitenlohner <tex-live@tug.org>
 ## You may freely use, modify and/or distribute this file.
 ##
 AM_CPPFLAGS = $(KPATHSEA_INCLUDES)
-## Not yet for C, C++, and ObjC++ (too many warnings or not yet implemented)
+## Not yet for C++ and ObjC++ (too many warnings)
 AM_CFLAGS = $(WARNING_CFLAGS)
 AM_CXXFLAGS = ## $(WARNING_CXXFLAGS)
 AM_OBJCXXFLAGS = ## $(WARNING_OBJCXXFLAGS)
@@ -25,11 +27,11 @@ lib_LTLIBRARIES =
 noinst_PROGRAMS =
 dist_man_MANS =
 nodist_man_MANS =
-check_PROGRAMS =
+TEST_EXTENSIONS = .pl .test
 TESTS =
 EXTRA_DIST = PROJECTS cftests cpascal.h help.h w2c/config.h
 DISTCLEANFILES = CXXLD.sh
-CLEANFILES =
+CLEANFILES = $(EXTRA_PROGRAMS) $(EXTRA_LIBRARIES) $(EXTRA_LTLIBRARIES)
 TRIPTRAP_CLEAN =
 TRIPTRAP =
 bin_links =
@@ -87,6 +89,8 @@ $(proglib): ${srcdir}/lib/*.c
 @ZLIB_RULE@
 ## Rebuild liblua52
 @LUA52_RULE@
+## Rebuild liblua53
+@LUA53_RULE@
 ## Rebuild libluajit
 @LUAJIT_RULE@
 ## Rebuild libpng
@@ -138,6 +142,8 @@ tie_silent = $(tie_silent_@AM_V@)
 tie_silent_ = $(tie_silent_@AM_DEFAULT_V@)
 tie_silent_0 = @echo "  TIE     " $@; $(SHELL) ./silent-sh $@ #
 tie_silent_1 =
+tie_c = $(tie) -c $@
+tie_m = $(tie) -m $@
 
 # Calling tangle & Co. via tangle-sh (several output files)
 texmf_tangle = WEBINPUTS=.:$(srcdir) AM_V_P=$(AM_V_P) $(SHELL) ./tangle-sh $@ $(TANGLE)
@@ -145,7 +151,12 @@ texmf_tangle = WEBINPUTS=.:$(srcdir) AM_V_P=$(AM_V_P) $(SHELL) ./tangle-sh $@ $(
 # For trip, trap, and other tests
 DIFF = diff
 DIFFFLAGS =
-TESTS_ENVIRONMENT = abs_srcdir=$(abs_srcdir) DIFF='$(DIFF)' DIFFFLAGS='$(DIFFFLAGS)' LN_S='$(LN_S)' KPSEWHICH='$(KPSEWHICH)'
+AM_TESTS_ENVIRONMENT = abs_srcdir=$(abs_srcdir); export abs_srcdir;
+AM_TESTS_ENVIRONMENT += DIFF='$(DIFF)'; export DIFF;
+AM_TESTS_ENVIRONMENT += DIFFFLAGS='$(DIFFFLAGS)'; export DIFFFLAGS;
+AM_TESTS_ENVIRONMENT += LN_S='$(LN_S)'; export LN_S;
+AM_TESTS_ENVIRONMENT += KPSEWHICH='$(KPSEWHICH)'; export KPSEWHICH;
+
 triptrap_diffs = $(AM_V_GEN)srcdir=$(srcdir) abs_srcdir=$(abs_srcdir) MAKE=$(MAKE) $(SHELL) $(srcdir)/triptrap-sh
 
 .PHONY: triptrap
@@ -181,6 +192,12 @@ include $(srcdir)/am/cweb.am
 
 ## TeX and MF
 include $(srcdir)/am/texmf.am
+
+## MFLua
+include $(srcdir)/mfluadir/am/mflua.am
+
+## MFLuaJIT
+include $(srcdir)/mfluajitdir/am/mfluajit.am
 
 ## MetaPost
 include $(srcdir)/mplibdir/am/mplib.am
@@ -219,19 +236,15 @@ include $(srcdir)/luatexdir/am/luamisc.am
 include $(srcdir)/luatexdir/am/libunilib.am
 include $(srcdir)/luatexdir/am/luafontforge.am
 include $(srcdir)/luatexdir/am/libluatex.am
+include $(srcdir)/luatexdir/am/luaffi.am
+include $(srcdir)/luatexdir/am/luapplib.am 
 include $(srcdir)/luatexdir/am/luatex.am
-include $(srcdir)/luatexdir/am/txt2zlib.am
 
 ## XeTeX
 include $(srcdir)/xetexdir/am/xetex.am
 
 ## omegaware web programs
 include $(srcdir)/omegaware/am/omegaware.am
-
-## programs required for 'make check' in omegafonts/ and omegaware/
-if OTANGLE
-check_PROGRAMS += pltotf tftopl
-endif OTANGLE
 
 ## Aleph
 include $(srcdir)/alephdir/am/aleph.am

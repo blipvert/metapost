@@ -1,3 +1,20 @@
+2017-01-15  Akira Kakuto  <kakuto@fuk.kindai.ac.jp>
+
+	Import zlib-1.2.11.
+
+2017-01-03  Akira Kakuto  <kakuto@fuk.kindai.ac.jp>
+
+	Import zlib-1.2.10.
+
+2016-02-15  Karl Berry  <karl@tug.org>
+
+	* zlib-src: rename dir from zlib-1.2.8.
+	* zlib-PATCHES: rename dir from zlib-1.2.8-PATCHES.
+
+2015-07-06  Peter Breitenlohner  <peb@mppmu.mpg.de>
+
+	* Makefile.am: Better dependencies for 'make check'.
+
 2015-02-16  Peter Breitenlohner  <peb@mppmu.mpg.de>
 
 	* Makefile.am: Use the fragment ../../am/dist_hook.am.
@@ -86,4 +103,3 @@
 
 	Adapt to TL2009 build system.
 	Add a test case for 'make check'.
-

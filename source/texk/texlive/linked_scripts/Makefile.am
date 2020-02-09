@@ -1,11 +1,12 @@
 ## Makefile.am for the TeX Live subdirectory texk/texlive/linked_scripts/
 ##
-## Copyright (C) 2009-2015 Peter Breitenlohner <tex-live@tug.org>
+## Copyright 2016-2017 Karl Berry <tex-live@tug.org>
+## Copyright 2009-2015 Peter Breitenlohner <tex-live@tug.org>
 ## You may freely use, modify and/or distribute this file.
 ##
 ## TeX Live's extra scripts.
 
-## Build lists of texmf and texmf-dist scripts.
+## Build lists of scripts.
 ##
 scripts-list: Makefile
 	@echo "Create $@"
@@ -45,13 +46,18 @@ installdirs-local:
 ##
 ## WIN_WRAPPER is w32_wrapper for 32-bit or w64_wrapper for 64-bit.
 ## 
+## The "shell" list aren't just shell scripts, in either direction.
 ## Some /bin/sh scripts are listed as `other' or `context'
 ## scripts because they are correctly handled by the wrapper binaries.
+## Conversely, some non-sh scripts are listed as `shell' because they
+## depend on shell scripts or otherwise aren't useful on Windows.
 ## 
 texmf_scriptsdir = $(datarootdir)/texmf-dist/scripts
 texmf_shell_scripts = \
 	adhocfilelist/adhocfilelist.sh \
 	bibexport/bibexport.sh \
+	checklistings/checklistings.sh \
+	ctanbib/ctanbib \
 	dtxgen/dtxgen \
 	installfont/installfont-tl \
 	latexfileversion/latexfileversion \
@@ -59,6 +65,7 @@ texmf_shell_scripts = \
 	listings-ext/listings-ext.sh \
 	ltxfileinfo/ltxfileinfo \
 	lua2dox/lua2dox_filter \
+	pdfbook2/pdfbook2 \
 	pdfjam/pdf180 \
 	pdfjam/pdf270 \
 	pdfjam/pdf90 \
@@ -71,9 +78,15 @@ texmf_shell_scripts = \
 	pdfjam/pdfjoin \
 	pdfjam/pdfnup \
 	pdfjam/pdfpun \
+	pdftex-quiet/pdftex-quiet \
+	pdfxup/pdfxup \
 	pst-pdf/ps4pdf \
 	simpdftex/simpdftex \
-	typeoutfileinfo/typeoutfileinfo.sh
+	texosquery/texosquery.sh \
+	texosquery/texosquery-jre5.sh \
+	texosquery/texosquery-jre8.sh \
+	typeoutfileinfo/typeoutfileinfo.sh \
+	wordcount/wordcount.sh
 texmf_other_scripts = \
 	a2ping/a2ping.pl \
 	accfonts/mkt1font \
@@ -81,21 +94,30 @@ texmf_other_scripts = \
 	accfonts/vpl2vpl \
 	arara/arara.sh \
 	authorindex/authorindex \
+	bib2gls/bib2gls.sh \
+	bib2gls/convertgls2bib.sh \
 	bundledoc/arlatex \
 	bundledoc/bundledoc \
 	cachepic/cachepic.tlu \
 	checkcites/checkcites.lua \
 	cjk-gs-integrate/cjk-gs-integrate.pl \
+	cluttex/cluttex.lua \
 	context/perl/mptopdf.pl \
 	convbkmk/convbkmk.rb \
+	crossrefware/bbl2bib.pl \
 	crossrefware/bibdoiadd.pl \
+	crossrefware/bibmradd.pl \
+	crossrefware/biburl2doi.pl \
 	crossrefware/bibzbladd.pl \
 	crossrefware/ltx2crossrefxml.pl \
+	ctan-o-mat/ctan-o-mat.pl \
 	ctanify/ctanify \
 	ctanupload/ctanupload.pl \
 	de-macro/de-macro \
+	diadia/diadia.lua \
 	dosepsbin/dosepsbin.pl \
 	dviasm/dviasm.py \
+	dviinfox/dviinfox.pl \
 	ebong/ebong.py \
 	epspdf/epspdf.tlu \
 	epspdf/epspdftk.tcl \
@@ -109,16 +131,18 @@ texmf_other_scripts = \
 	fragmaster/fragmaster.pl \
 	getmap/getmapdl.lua \
 	glossaries/makeglossaries \
-	jfontmaps/kanji-fontmap-creator.pl \
-	jfontmaps/kanji-config-updmap.pl \
-	jfontmaps/kanji-config-updmap-sys.sh \
+	glossaries/makeglossaries-lite.lua \
+	jfmutil/jfmutil.pl \
 	kotex-utils/jamo-normalize.pl \
 	kotex-utils/komkindex.pl \
 	kotex-utils/ttf2kotexfont.pl \
+	l3build/l3build.lua \
 	latex-git-log/latex-git-log \
+	latex-papersize/latex-papersize.py \
 	latex2man/latex2man \
-	latexdiff/latexdiff.pl \
+	latex2nemeth/latex2nemeth \
 	latexdiff/latexdiff-vc.pl \
+	latexdiff/latexdiff.pl \
 	latexdiff/latexrevise.pl \
 	latexindent/latexindent.pl \
 	latexmk/latexmk.pl \
@@ -128,12 +152,15 @@ texmf_other_scripts = \
 	lilyglyphs/lily-rebuild-pdfs.py \
 	ltximg/ltximg.pl \
 	luaotfload/luaotfload-tool.lua \
+	lwarp/lwarpmk.lua \
 	m-tx/m-tx.lua \
+	makedtx/makedtx.pl \
+	make4ht/make4ht \
 	match_parens/match_parens \
 	mathspic/mathspic.pl \
 	mf2pt1/mf2pt1.pl \
-	mkjobtexmf/mkjobtexmf.pl \
 	mkgrkindex/mkgrkindex \
+	mkjobtexmf/mkjobtexmf.pl \
 	mkpic/mkpic \
 	multibibliography/multibibliography.pl \
 	musixtex/musixflx.lua \
@@ -141,42 +168,55 @@ texmf_other_scripts = \
 	oberdiek/pdfatfi.pl \
 	pax/pdfannotextractor.pl \
 	pdfcrop/pdfcrop.pl \
+	pdflatexpicscale/pdflatexpicscale.pl \
 	pedigree-perl/pedigree.pl \
 	perltex/perltex.pl \
-	pfarrei/pfarrei.tlu \
+	petri-nets/pn2pdf \
 	pfarrei/a5toa4.tlu \
-	pkfix/pkfix.pl \
+	pfarrei/pfarrei.tlu \
 	pkfix-helper/pkfix-helper \
-	pmx/pmx2pdf.lua \
+	pkfix/pkfix.pl \
 	pmxchords/pmxchords.lua \
 	pst2pdf/pst2pdf.pl \
+	ptex-fontmaps/kanji-config-updmap-sys.sh \
+	ptex-fontmaps/kanji-config-updmap-user.sh \
+	ptex-fontmaps/kanji-config-updmap.pl \
+	ptex-fontmaps/kanji-fontmap-creator.pl \
 	ptex2pdf/ptex2pdf.lua \
 	purifyeps/purifyeps \
 	pygmentex/pygmentex.py \
-	pythontex/pythontex.py \
 	pythontex/depythontex.py \
+	pythontex/pythontex.py \
 	rubik/rubikrotation.pl \
 	splitindex/splitindex.pl \
+	srcredact/srcredact.pl \
 	sty2dtx/sty2dtx.pl \
 	svn-multi/svn-multi.pl \
-	texdoc/texdoc.tlu \
+	tex4ebook/tex4ebook \
 	texcount/texcount.pl \
 	texdef/texdef.pl \
 	texdiff/texdiff \
 	texdirflatten/texdirflatten \
+	texdoc/texdoc.tlu \
 	texfot/texfot.pl \
-	texlive/fmtutil.pl \
 	texlive/fmtutil-sys.sh \
+	texlive/fmtutil-user.sh \
+	texlive/fmtutil.pl \
 	texlive/rungs.tlu \
 	texlive/tlmgr.pl \
-	texlive/updmap.pl \
 	texlive/updmap-sys.sh \
+	texlive/updmap-user.sh \
+	texlive/updmap.pl \
 	texliveonfly/texliveonfly.py \
 	texloganalyser/texloganalyser \
 	thumbpdf/thumbpdf.pl \
+	tlcockpit/tlcockpit.sh \
+	tlshell/tlshell.tcl \
 	ulqda/ulqda.pl \
 	urlbst/urlbst \
 	vpe/vpe.pl \
+	webquiz/webquiz.py \
+	xindex/xindex.lua \
 	yplan/yplan
 texmf_context_scripts = \
 	context/stubs/unix/context \
@@ -196,10 +236,13 @@ nobase_dist_texmf_scripts_SCRIPTS = \
 	$(texmf_other_scripts) \
 	$(texmf_context_scripts)
 
-## Symlinks within $(bindir): FILE:LINK indicates LINK->FILE
+## Symlinks within $(bindir): FILE:LINK here means "ln -s FILE LINK" is done.
 bin_links = \
+	cluttex:clxelatex \
+	cluttex:cllualatex \
 	epstopdf:repstopdf \
-	pdfcrop:rpdfcrop
+	pdfcrop:rpdfcrop \
+	texdef:latexdef
 
 # The idea is to install the scripts themselves in texmf*/scripts, and
 # have bin/arch/foo be a symlink to, say,

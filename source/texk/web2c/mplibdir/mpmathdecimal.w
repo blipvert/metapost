@@ -1,4 +1,4 @@
-% $Id: mpmathdecimal.w 1915 2013-06-13 10:17:31Z taco $
+% $Id$
 %
 % This file is part of MetaPost;
 % the MetaPost program is in the public domain.
@@ -10,6 +10,9 @@
 \font\logos=logosl10
 \def\MF{{\tenlogo META}\-{\tenlogo FONT}}
 \def\MP{{\tenlogo META}\-{\tenlogo POST}}
+\def\pct!{{\char`\%}} % percent sign in ordinary text
+\def\psqrt#1{\sqrt{\mathstrut#1}}
+
 
 \def\title{Math support functions for decNumber based math}
 \pdfoutput=1
@@ -55,7 +58,7 @@ First, here are some very important constants.
 static void mp_decimal_scan_fractional_token (MP mp, int n);
 static void mp_decimal_scan_numeric_token (MP mp, int n);
 static void mp_ab_vs_cd (MP mp, mp_number *ret, mp_number a, mp_number b, mp_number c, mp_number d);
-/*static void mp_decimal_ab_vs_cd (MP mp, mp_number *ret, mp_number a, mp_number b, mp_number c, mp_number d);*/
+/*|static void mp_decimal_ab_vs_cd (MP mp, mp_number *ret, mp_number a, mp_number b, mp_number c, mp_number d);|*/
 static void mp_decimal_crossing_point (MP mp, mp_number *ret, mp_number a, mp_number b, mp_number c);
 static void mp_decimal_number_modulo (mp_number *a, mp_number b);
 static void mp_decimal_print_number (MP mp, mp_number n);
@@ -68,6 +71,7 @@ static void mp_number_angle_to_scaled (mp_number *A);
 static void mp_number_fraction_to_scaled (mp_number *A);
 static void mp_number_scaled_to_fraction (mp_number *A);
 static void mp_number_scaled_to_angle (mp_number *A);
+static void mp_decimal_m_unif_rand (MP mp, mp_number *ret, mp_number x_orig);
 static void mp_decimal_m_norm_rand (MP mp, mp_number *ret);
 static void mp_decimal_m_exp (MP mp, mp_number *ret, mp_number x_orig);
 static void mp_decimal_m_log (MP mp, mp_number *ret, mp_number x_orig);
@@ -138,7 +142,7 @@ int decNumber_check (decNumber *dec, decContext *context)
       context->status &= ~DEC_Underflow; 
    }
    if (context->status & DEC_Errors) {
-//     fprintf(stdout, "DEC_ERROR %x (%s)\n", context->status, decContextStatusToString(context));
+/*|fprintf(stdout, "DEC_ERROR %x (%s)\n", context->status, decContextStatusToString(context));|*/
      test = true;
      decNumberZero(dec);
    }
@@ -151,7 +155,7 @@ int decNumber_check (decNumber *dec, decContext *context)
         } else {
 	  decNumberCopy(dec, &EL_GORDO_decNumber);
         }
-      } else { // Nan 
+      } else { /* Nan  */
         decNumberZero(dec);
       }
    }
@@ -213,28 +217,32 @@ static double decNumberToDouble(decNumber *A) {
      return res;
   } else {
      free(buffer);
-     //mp->arith_error = 1;
-     return 0.0; // whatever
+     /*|mp->arith_error = 1;|*/
+     return 0.0; /* whatever*/
   }
 }
-
 @ Borrowed code from libdfp:
 
-                x^3   x^5   x^7
-arctan(x) = x - --- + --- - --- + ...
-                 3     5     7
+%                x^3   x^5   x^7
+%arctan(x) = x - --- + --- - --- + ...
+%                 3     5     7
+$$ \arctan(x) = x - {x^3\over3} + {x^5\over5} - {x^7\over7} +  \ldots$$
 
-This power series works well, if x is close to zero (|x|<0.5).
+
+This power series works well, if $x$ is close to zero ($|x|<0.5$).
 If x is larger, the series converges too slowly,
 so in order to get a smaller x, we apply the identity 
 
-                     sqrt(1+x^2) - 1
-arctan(x) = 2*arctan ---------------
-                            x
+%                     sqrt(1+x^2) - 1
+%arctan(x) = 2*arctan ---------------
+%                            x
+$$ \arctan(x) = 2\,\arctan{{\sqrt{1+x^2}-1}\over x}$$
 
-twice. The first application gives us a new x with x < 1.
-The second application gives us a new x with x < 0.4142136.
-For that x, we use the power series and multiply the result by four.
+twice. The first application gives us a new $x$ with $x < 1$.
+The second application gives us a new x with $x < 0.4142136$.
+For that $x$, we use the power series and multiply the result by four.
+
+
 
 @c
 static void decNumberAtan (decNumber *result, decNumber *x_orig, decContext *set) 
@@ -248,22 +256,22 @@ static void decNumberAtan (decNumber *result, decNumber *x_orig, decContext *set
   }
   for (i=0; i<2; i++) {
     decNumber y;
-    decNumberMultiply (&y, &x, &x, set);     // y = x^2
-    decNumberAdd (&y, &y, &one, set);      // y = y+1
-    decNumberSquareRoot (&y, &y, set);     // y = sqrt(y)
-    decNumberSubtract (&y, &y, &one, set); // y = y-1
-    decNumberDivide (&x, &y, &x, set);       // x = y/x
+    decNumberMultiply (&y, &x, &x, set);     /* $y = x^2$ */
+    decNumberAdd (&y, &y, &one, set);      /* $y = y+1$*/
+    decNumberSquareRoot (&y, &y, set);     /* $y = sqrt(y)$ */
+    decNumberSubtract (&y, &y, &one, set); /* $y = y-1$ */
+    decNumberDivide (&x, &y, &x, set);       /* $x = y/x$ */
     if (decNumberIsZero (&x)) {
       decNumberCopy (result, &x);
       return;
     }
   }
-  decNumberCopy (&f, &x);     // f(0) = x
-  decNumberCopy (&g, &one);  // g(0) = 1
-  decNumberCopy (&term, &x);  // term = x
-  decNumberCopy (result, &x); // sum  = x 
-  decNumberMultiply (&mx2, &x, &x, set); // mx2 = x^2
-  decNumberMinus (&mx2, &mx2, set);    // mx2 = -x^2  
+  decNumberCopy (&f, &x);     /* $f(0) = x$ */
+  decNumberCopy (&g, &one);  /*$ g(0) = 1$*/
+  decNumberCopy (&term, &x);  /*$ term = x$*/
+  decNumberCopy (result, &x); /*$ sum  = x $*/
+  decNumberMultiply (&mx2, &x, &x, set); /*$ mx2 = x^2$*/
+  decNumberMinus (&mx2, &mx2, set);    /*$ mx2 = -x^2  $*/
   for (i=0; i<2*set->digits; i++) {
     decNumberMultiply (&f, &f, &mx2, set);
     decNumberAdd (&g, &g, &two_decNumber, set); 
@@ -364,11 +372,11 @@ static boolean initialized = false ;
 @ @c
 void * mp_initialize_decimal_math (MP mp) {
   math_data *math = (math_data *)mp_xmalloc(mp,1,sizeof(math_data));
-  // various decNumber initializations
-  decContextDefault(&set, DEC_INIT_BASE); // initialize
-  set.traps=0;                     // no traps, thank you
-  decContextDefault(&limitedset, DEC_INIT_BASE); // initialize
-  limitedset.traps=0;                     // no traps, thank you
+  /* various decNumber initializations */
+  decContextDefault(&set, DEC_INIT_BASE); /* initialize */
+  set.traps=0;                     /* no traps, thank you */
+  decContextDefault(&limitedset, DEC_INIT_BASE); /* initialize */
+  limitedset.traps=0;                     /* no traps, thank you */
   limitedset.emax = 999999;
   limitedset.emin = -999999;
   set.digits = DECPRECISION_DEFAULT;
@@ -401,7 +409,7 @@ void * mp_initialize_decimal_math (MP mp) {
   mp_new_number (mp, &math->precision_max, mp_scaled_type);
   decNumberFromInt32(math->precision_max.data.num, DECNUMDIGITS);
   mp_new_number (mp, &math->precision_min, mp_scaled_type);
-  decNumberFromInt32(math->precision_min.data.num, 1);
+  decNumberFromInt32(math->precision_min.data.num, 2);
   /* here are the constants for |scaled| objects */
   mp_new_number (mp, &math->epsilon_t, mp_scaled_type);
   decNumberCopy(math->epsilon_t.data.num, &epsilon_decNumber);
@@ -542,6 +550,7 @@ void * mp_initialize_decimal_math (MP mp) {
   math->n_arg = mp_decimal_n_arg;
   math->m_log = mp_decimal_m_log;
   math->m_exp = mp_decimal_m_exp;
+  math->m_unif_rand = mp_decimal_m_unif_rand;
   math->m_norm_rand = mp_decimal_m_norm_rand;
   math->pyth_add = mp_decimal_pyth_add;
   math->pyth_sub = mp_decimal_pyth_sub;
@@ -573,7 +582,6 @@ void mp_decimal_set_precision (MP mp) {
 }
 
 void mp_free_decimal_math (MP mp) {
-  int i;
   free_number (((math_data *)mp->math)->three_sixty_deg_t);
   free_number (((math_data *)mp->math)->one_eighty_deg_t);
   free_number (((math_data *)mp->math)->fraction_one_t);
@@ -599,10 +607,11 @@ void mp_free_decimal_math (MP mp) {
   free_number (((math_data *)mp->math)->p_over_v_threshold_t);
   free_number (((math_data *)mp->math)->equation_threshold_t);
   free_number (((math_data *)mp->math)->tfm_warn_threshold_t);
-  for (i = 0; i <= last_cached_factorial; i++) {
-    free(factorials[i]);
-  }
-  free(factorials);
+  /* For sake of speed, we accept this memory leak. */
+  /* for (i = 0; i <= last_cached_factorial; i++) {*/
+  /*  free(factorials[i]);*/
+  /* }*/
+  /* free(factorials); */
   free(mp->math);
 }
 
@@ -746,7 +755,7 @@ void mp_number_scaled_to_angle (mp_number *A) {
 }
 
 
-@* Query functions
+@* Query functions.
 
 @ Convert a number to a scaled value. |decNumberToInt32| is not
 able to make this conversion properly, so instead we are using
@@ -774,8 +783,8 @@ int mp_number_to_int(mp_number A) {
   result = decNumberToInt32(A.data.num, &set);
   if (set.status == DEC_Invalid_operation) {
      set.status = 0;
-     // mp->arith_error = 1;
-     return 0; // whatever
+     /* |mp->arith_error = 1;| */
+     return 0; /* whatever */
   } else {
      return result;
   }
@@ -786,8 +795,8 @@ int mp_number_to_boolean(mp_number A) {
   result = decNumberToUInt32(A.data.num, &set);
   if (set.status == DEC_Invalid_operation) {
      set.status = 0;
-     // mp->arith_error = 1;
-     return mp_false_code; // whatever
+     /* |mp->arith_error = 1;| */
+     return mp_false_code; /* whatever */
   } else {
      return result ;
   }
@@ -802,8 +811,8 @@ double mp_number_to_double(mp_number A) {
      return res;
   } else {
      free(buffer);
-     //mp->arith_error = 1;
-     return 0.0; // whatever
+     /* |mp->arith_error = 1;| */
+     return 0.0; /* whatever */
   }
 }
 int mp_number_odd(mp_number A) {
@@ -992,7 +1001,7 @@ void mp_decimal_number_make_scaled (MP mp, mp_number *ret, mp_number p_orig, mp_
 @ 
 @d halfp(A) (integer)((unsigned)(A) >> 1)
 
-@* Scanning numbers in the input
+@* Scanning numbers in the input.
 
 The definitions below are temporarily here
 
@@ -1036,7 +1045,7 @@ void mp_wrapup_numeric_token(MP mp, unsigned char *start, unsigned char *stop) {
         mp_snprintf (msg, 256, "Number is too precise (numberprecision = %d)", set.digits);
         mp_error (mp, msg, hlp, true);
       }
-    } else { // this also captures underflow
+    } else { /* this also captures underflow */
       const char *hlp[] = {"I could not handle this number specification",
                            "Error:",
                            "",
@@ -1148,46 +1157,46 @@ void mp_decimal_velocity (MP mp, mp_number *ret, mp_number st, mp_number ct, mp_
   decNumberFromInt32(&fone, fraction_one);
   decNumberFromInt32(&fhalf, fraction_half);
   decNumberFromInt32(&ftwo, fraction_two);
-  decNumberFromInt32(&sqrtfive, 5);                     // sqrt(5)
+  decNumberFromInt32(&sqrtfive, 5);                     /*$\sqrt{5}$*/
   decNumberSquareRoot(&sqrtfive, &sqrtfive, &set);          
 
 
-  decNumberDivide(&arg1,sf.data.num, &i16, &set); // arg1 = sf / 16
-  decNumberSubtract(&arg1,st.data.num,&arg1, &set); // arg1 = st - arg1
-  decNumberDivide(&arg2,st.data.num, &i16, &set); // arg2 = st / 16
-  decNumberSubtract(&arg2,sf.data.num,&arg2, &set); // arg2 = sf - arg2
-  mp_decimal_take_fraction (mp, &acc, &arg1, &arg2); // acc = (arg1 * arg2) / fmul
+  decNumberDivide(&arg1,sf.data.num, &i16, &set); /* arg1 = sf / 16*/
+  decNumberSubtract(&arg1,st.data.num,&arg1, &set); /* arg1 = st - arg1*/
+  decNumberDivide(&arg2,st.data.num, &i16, &set); /* arg2 = st / 16*/
+  decNumberSubtract(&arg2,sf.data.num,&arg2, &set); /* arg2 = sf - arg2*/
+  mp_decimal_take_fraction (mp, &acc, &arg1, &arg2); /* acc = (arg1 * arg2) / fmul*/
 
   decNumberCopy(&arg1, &acc);
-  decNumberSubtract(&arg2, ct.data.num, cf.data.num, &set); // arg2 = ct - cf
-  mp_decimal_take_fraction (mp, &acc, &arg1, &arg2); // acc = (arg1 * arg2 ) / fmul
+  decNumberSubtract(&arg2, ct.data.num, cf.data.num, &set); /* arg2 = ct - cf*/
+  mp_decimal_take_fraction (mp, &acc, &arg1, &arg2); /* acc = (arg1 * arg2 ) / fmul*/
 
-  decNumberSquareRoot(&arg1, &two_decNumber, &set); // arg1 = sqrt(2)
-  decNumberMultiply(&arg1, &arg1, &fone, &set);     // arg1 = arg1 * fmul
-  mp_decimal_take_fraction (mp, &r1, &acc, &arg1);  // r1 = (acc * arg1) / fmul
-  decNumberAdd(&num, &ftwo, &r1, &set);             // num = ftwo + r1
+  decNumberSquareRoot(&arg1, &two_decNumber, &set); /* arg1 = $\sqrt{2}$*/
+  decNumberMultiply(&arg1, &arg1, &fone, &set);     /* arg1 = arg1 * fmul*/
+  mp_decimal_take_fraction (mp, &r1, &acc, &arg1);  /* r1 = (acc * arg1) / fmul*/
+  decNumberAdd(&num, &ftwo, &r1, &set);             /* num = ftwo + r1*/
   
-  decNumberSubtract(&arg1,&sqrtfive, &one, &set);   // arg1 = sqrt(5) - 1
-  decNumberMultiply(&arg1,&arg1,&fhalf, &set);      // arg1 = arg1 * fmul/2
-  decNumberMultiply(&arg1,&arg1,&three_decNumber, &set); // arg1 = arg1 * 3
+  decNumberSubtract(&arg1,&sqrtfive, &one, &set);   /* arg1 = $\sqrt{5}$ - 1*/
+  decNumberMultiply(&arg1,&arg1,&fhalf, &set);      /* arg1 = arg1 * fmul/2*/
+  decNumberMultiply(&arg1,&arg1,&three_decNumber, &set); /* arg1 = arg1 * 3*/
 
-  decNumberSubtract(&arg2,&three_decNumber, &sqrtfive, &set); // arg2 = 3 - sqrt(5)
-  decNumberMultiply(&arg2,&arg2,&fhalf, &set);            // arg2 = arg2 * fmul/2
-  decNumberMultiply(&arg2,&arg2,&three_decNumber, &set);  // arg2 = arg2 * 3
-  mp_decimal_take_fraction (mp, &r1, ct.data.num, &arg1) ; // r1 = (ct * arg1) / fmul
-  mp_decimal_take_fraction (mp, &r2, cf.data.num, &arg2);  // r2 = (cf * arg2) / fmul
+  decNumberSubtract(&arg2,&three_decNumber, &sqrtfive, &set); /* arg2 = 3 - $\sqrt{5}$*/
+  decNumberMultiply(&arg2,&arg2,&fhalf, &set);            /* arg2 = arg2 * fmul/2*/
+  decNumberMultiply(&arg2,&arg2,&three_decNumber, &set);  /* arg2 = arg2 * 3*/
+  mp_decimal_take_fraction (mp, &r1, ct.data.num, &arg1) ; /* r1 = (ct * arg1) / fmul*/
+  mp_decimal_take_fraction (mp, &r2, cf.data.num, &arg2);  /* r2 = (cf * arg2) / fmul*/
 
-  decNumberFromInt32(&denom, fraction_three);  // denom = 3fmul
-  decNumberAdd(&denom, &denom, &r1, &set);     // denom = denom + r1
-  decNumberAdd(&denom, &denom, &r2, &set);     // denom = denom + r1
+  decNumberFromInt32(&denom, fraction_three);  /* denom = 3fmul*/
+  decNumberAdd(&denom, &denom, &r1, &set);     /* denom = denom + r1*/
+  decNumberAdd(&denom, &denom, &r2, &set);     /* denom = denom + r1*/
 
   decNumberCompare(&arg1, t.data.num, &one, &set); 
-  if (!decNumberIsZero(&arg1)) {                 // t != r1
-    decNumberDivide(&num, &num, t.data.num, &set); // num = num / t
+  if (!decNumberIsZero(&arg1)) {                 /* t != r1*/
+    decNumberDivide(&num, &num, t.data.num, &set); /* num = num / t*/
   }
-  decNumberCopy(&r2, &num);                        // r2 = num / 4
+  decNumberCopy(&r2, &num);                        /* r2 = num / 4*/
   decNumberDivide(&r2, &r2, &four_decNumber, &set);
-  if (decNumberLess(&denom,&r2)) { // num/4 >= denom => denom < num/4
+  if (decNumberLess(&denom,&r2)) { /* num/4 >= denom => denom < num/4*/
     decNumberFromInt32(ret->data.num,fraction_four);
   } else {
     mp_decimal_make_fraction (mp, ret->data.num, &num, &denom);
@@ -1211,11 +1220,21 @@ The result is $+1$, 0, or~$-1$ in the three respective cases.
 void mp_ab_vs_cd (MP mp, mp_number *ret, mp_number a_orig, mp_number b_orig, mp_number c_orig, mp_number d_orig) {
   decNumber q, r, test; /* temporary registers */
   decNumber a, b, c, d;
+  decNumber ab, cd;
   (void)mp;
   decNumberCopy(&a, (decNumber *)a_orig.data.num);
   decNumberCopy(&b, (decNumber *)b_orig.data.num);
   decNumberCopy(&c, (decNumber *)c_orig.data.num);
   decNumberCopy(&d, (decNumber *)d_orig.data.num);
+
+  decNumberMultiply (&ab, (decNumber *)a_orig.data.num, (decNumber *)b_orig.data.num, &set);
+  decNumberMultiply (&cd, (decNumber *)c_orig.data.num, (decNumber *)d_orig.data.num, &set);
+  decNumberCompare(ret->data.num, &ab, &cd, &set);
+  mp_check_decNumber(mp, ret->data.num, &set);
+  if (1>0) 
+    return;
+
+
   @<Reduce to the case that |a,c>=0|, |b,d>0|@>;
   while (1) {
     decNumberDivide(&q,&a,&d, &set);
@@ -1425,7 +1444,7 @@ int mp_round_unscaled(mp_number x_orig) {
 @c
 void mp_number_floor (mp_number *i) {
   int round = set.round;
-  set.round = DEC_ROUND_DOWN;
+  set.round = DEC_ROUND_FLOOR;  
   decNumberToIntegralValue(i->data.num, i->data.num, &set);
   set.round = round;
 }
@@ -1489,10 +1508,10 @@ void mp_decimal_pyth_add (MP mp, mp_number *ret, mp_number a_orig, mp_number b_o
   decNumberMultiply(&bsq, &b, &b, &set);
   decNumberAdd(&a, &asq, &bsq, &set);
   decNumberSquareRoot(ret->data.num, &a, &set);
-  //if (set.status != 0) {
-  //  mp->arith_error = true;
-  //  decNumberCopy(ret->data.num, &EL_GORDO_decNumber);
-  //}
+  /*|if (set.status != 0) {|*/
+  /*|  mp->arith_error = true;|*/
+  /*|  decNumberCopy(ret->data.num, &EL_GORDO_decNumber);|*/
+  /*|}|*/
   mp_check_decNumber(mp, ret->data.num, &set);
 }
 
@@ -1684,12 +1703,12 @@ static void sinecosine(decNumber *theangle, decNumber *c, decNumber *s)
         decNumberAdd      (s,    s,    &pxa, &set);
 
         decNumberFromInt32(&n2, 2*n+1);
-        decNumberMultiply (&fac, &fac, &n2,  &set); // fac = fac * (2*n+1)
+        decNumberMultiply (&fac, &fac, &n2,  &set); /* fac = fac * (2*n+1)*/
         decNumberPower(&pxa, theangle, &n2,  &limitedset);
         decNumberDivide   (&pxa, &pxa, &fac, &set);
         decNumberMultiply (&pxa, &pxa, &p,   &set);
         decNumberAdd      (c,    c,    &pxa, &set);
-	// printf("\niteration %2d: %-42s %-42s",n,tostring(c), tostring(s));
+	/* |printf("\niteration %2d: %-42s %-42s",n,tostring(c), tostring(s));|*/
     }
 }
 
@@ -1697,13 +1716,13 @@ static void sinecosine(decNumber *theangle, decNumber *c, decNumber *s)
 @c
 void mp_decimal_sin_cos (MP mp, mp_number z_orig, mp_number *n_cos, mp_number *n_sin) {
   decNumber rad;
+  double tmp;
   decNumber one_eighty;
-  decNumberFromInt32(&one_eighty, 180 * 16);
+  tmp = mp_number_to_double(z_orig)/16.0;
+  
 #if DEBUG
   fprintf(stdout, "\nsin_cos(%f)", mp_number_to_double(z_orig));
 #endif
-  decNumberMultiply(&rad, z_orig.data.num, &PI_decNumber, &set);
-  decNumberDivide(&rad, &rad, &one_eighty, &set);
 #if 0
   if (decNumberIsNegative(&rad)) {
     while (decNumberLess(&rad,&PI_decNumber))
@@ -1713,9 +1732,23 @@ void mp_decimal_sin_cos (MP mp, mp_number z_orig, mp_number *n_cos, mp_number *n
       decNumberSubtract(&rad, &rad, &PI_decNumber, &set);
   }
 #endif
-  sinecosine(&rad, n_sin->data.num, n_cos->data.num); 
-  decNumberMultiply(n_cos->data.num,n_cos->data.num,&fraction_multiplier_decNumber, &set);
-  decNumberMultiply(n_sin->data.num,n_sin->data.num,&fraction_multiplier_decNumber, &set);
+    if ((tmp == 90.0)||(tmp == -270)){
+    decNumberZero(n_cos->data.num);
+    decNumberCopy(n_sin->data.num,&fraction_multiplier_decNumber);
+  } else if ((tmp == -90.0)||(tmp == 270.0)) {
+    decNumberZero(n_cos->data.num);
+    decNumberCopyNegate(n_sin->data.num,&fraction_multiplier_decNumber);
+  } else if ((tmp == 180.0) || (tmp == -180.0)) {
+    decNumberCopyNegate(n_cos->data.num,&fraction_multiplier_decNumber);
+    decNumberZero(n_sin->data.num);
+  } else {
+   decNumberFromInt32(&one_eighty, 180 * 16);
+   decNumberMultiply(&rad, z_orig.data.num, &PI_decNumber, &set);
+   decNumberDivide(&rad, &rad, &one_eighty, &set);
+   sinecosine(&rad, n_sin->data.num, n_cos->data.num); 
+   decNumberMultiply(n_cos->data.num,n_cos->data.num,&fraction_multiplier_decNumber, &set);
+   decNumberMultiply(n_sin->data.num,n_sin->data.num,&fraction_multiplier_decNumber, &set);
+  }
 #if DEBUG
   fprintf(stdout, "\nsin_cos(%f,%f,%f)", decNumberToDouble(&rad),
 mp_number_to_double(*n_cos), mp_number_to_double(*n_sin));
@@ -1723,6 +1756,81 @@ mp_number_to_double(*n_cos), mp_number_to_double(*n_sin));
    mp_check_decNumber(mp, n_cos->data.num, &set);
    mp_check_decNumber(mp, n_sin->data.num, &set);
 }
+
+@ This is the {\tt http://www-cs-faculty.stanford.edu/~uno/programs/rng.c}
+with  small cosmetic modifications.
+
+@c
+#define KK 100                     /* the long lag  */
+#define LL  37                     /* the short lag */
+#define MM (1L<<30)                /* the modulus   */
+#define mod_diff(x,y) (((x)-(y))&(MM-1)) /* subtraction mod MM */
+/* */ 
+static long ran_x[KK];                    /* the generator state */
+/* */ 
+static void ran_array(long aa[],int n) /* put n new random numbers in aa */
+  /* long aa[]    destination */
+  /* int n       array length (must be at least KK) */
+{
+  register int i,j;
+  for (j=0;j<KK;j++) aa[j]=ran_x[j];
+  for (;j<n;j++) aa[j]=mod_diff(aa[j-KK],aa[j-LL]);
+  for (i=0;i<LL;i++,j++) ran_x[i]=mod_diff(aa[j-KK],aa[j-LL]);
+  for (;i<KK;i++,j++) ran_x[i]=mod_diff(aa[j-KK],ran_x[i-LL]);
+}
+/* */ 
+/* the following routines are from exercise 3.6--15 */
+/* after calling |ran_start|, get new randoms by, e.g., "|x=ran_arr_next()|" */
+/* */ 
+#define QUALITY 1009 /* recommended quality level for high-res use */
+static long ran_arr_buf[QUALITY];
+static long ran_arr_dummy=-1, ran_arr_started=-1;
+static long *ran_arr_ptr=&ran_arr_dummy; /* the next random number, or -1 */
+/* */ 
+#define TT  70   /* guaranteed separation between streams */
+#define is_odd(x)  ((x)&1)          /* units bit of x */
+/* */ 
+static void ran_start(long seed) /* do this before using |ran_array| */
+  /* |long seed|             selector for different streams */
+{
+  register int t,j;
+  long x[KK+KK-1];              /* the preparation buffer */
+  register long ss=(seed+2)&(MM-2);
+  for (j=0;j<KK;j++) {
+    x[j]=ss;                      /* bootstrap the buffer */
+    ss<<=1; if (ss>=MM) ss-=MM-2; /* cyclic shift 29 bits */
+  }
+  x[1]++;              /* make x[1] (and only x[1]) odd */
+  for (ss=seed&(MM-1),t=TT-1; t; ) {       
+    for (j=KK-1;j>0;j--) x[j+j]=x[j], x[j+j-1]=0; /* "square" */
+    for (j=KK+KK-2;j>=KK;j--)
+      x[j-(KK-LL)]=mod_diff(x[j-(KK-LL)],x[j]),
+      x[j-KK]=mod_diff(x[j-KK],x[j]);
+    if (is_odd(ss)) {              /* "multiply by z" */
+      for (j=KK;j>0;j--)  x[j]=x[j-1];
+      x[0]=x[KK];            /* shift the buffer cyclically */
+      x[LL]=mod_diff(x[LL],x[KK]);
+    }
+    if (ss) ss>>=1; else t--;
+  }
+  for (j=0;j<LL;j++) ran_x[j+KK-LL]=x[j];
+  for (;j<KK;j++) ran_x[j-LL]=x[j];
+  for (j=0;j<10;j++) ran_array(x,KK+KK-1); /* warm things up */
+  ran_arr_ptr=&ran_arr_started;
+}
+/* */ 
+#define ran_arr_next() (*ran_arr_ptr>=0? *ran_arr_ptr++: ran_arr_cycle())
+static long ran_arr_cycle(void)
+{
+  if (ran_arr_ptr==&ran_arr_dummy)
+    ran_start(314159L); /* the user forgot to initialize */
+  ran_array(ran_arr_buf,QUALITY);
+  ran_arr_buf[KK]=-1;
+  ran_arr_ptr=ran_arr_buf+1;
+  return ran_arr_buf[0];
+}
+
+
 
 @ To initialize the |randoms| table, we call the following routine.
 
@@ -1746,6 +1854,9 @@ void mp_init_randoms (MP mp, int seed) {
   mp_new_randoms (mp);
   mp_new_randoms (mp);
   mp_new_randoms (mp);          /* ``warm up'' the array */
+
+  ran_start((unsigned long) seed);  
+
 }
 
 @ @c
@@ -1754,14 +1865,21 @@ void mp_decimal_number_modulo (mp_number *a, mp_number b) {
 }
 
 
+@ To consume a random  integer for the uniform generator, the program below will say `|next_unif_random|'.
 
-
-
-
-
-
-
-
+@c 
+static void mp_next_unif_random (MP mp, mp_number *ret) { 
+  decNumber a; 
+  decNumber b; 
+  unsigned long int op;
+  (void)mp;
+  op = (unsigned)ran_arr_next(); 
+  decNumberFromInt32(&a, op);
+  decNumberFromInt32(&b, MM);
+  decNumberDivide (&a, &a, &b, &set); /* a = a/b */
+  decNumberCopy(ret->data.num, &a);
+  mp_check_decNumber(mp, ret->data.num, &set);
+}
 
 
 @ To consume a random fraction, the program below will say `|next_random|'.
@@ -1774,6 +1892,43 @@ static void mp_next_random (MP mp, mp_number *ret) {
     mp->j_random = mp->j_random-1;
   mp_number_clone (ret, mp->randoms[mp->j_random]);
 }
+
+
+@ To produce a uniform random number in the range |0<=u<x| or |0>=u>x|
+or |0=u=x|, given a |scaled| value~|x|, we proceed as shown here.
+
+Note that the call of |take_fraction| will produce the values 0 and~|x|
+with about half the probability that it will produce any other particular
+values between 0 and~|x|, because it rounds its answers.
+
+@c
+static void mp_decimal_m_unif_rand (MP mp, mp_number *ret, mp_number x_orig) {
+  mp_number y;     /* trial value */
+  mp_number x, abs_x;
+  mp_number u;
+  new_fraction (y);
+  new_number (x);
+  new_number (abs_x);
+  new_number (u);
+  mp_number_clone (&x, x_orig);
+  mp_number_clone (&abs_x, x);
+  mp_decimal_abs (&abs_x);
+  mp_next_unif_random(mp, &u);
+  decNumberMultiply (y.data.num, abs_x.data.num, u.data.num, &set);
+  free_number (u);
+  if (mp_number_equal(y, abs_x)) {
+    mp_number_clone (ret, ((math_data *)mp->math)->zero_t);
+  } else if (mp_number_greater(x, ((math_data *)mp->math)->zero_t)) {
+    mp_number_clone (ret, y);
+  } else {
+    mp_number_clone (ret, y);
+    mp_number_negate (ret);
+  }
+  free_number (abs_x);
+  free_number (x);
+  free_number (y);
+}
+
 
 
 @ Finally, a normal deviate with mean zero and unit standard deviation
@@ -1810,7 +1965,6 @@ static void mp_decimal_m_norm_rand (MP mp, mp_number *ret) {
     mp_number_clone (&xa, r);
     mp_decimal_m_log (mp,&la, u);
     mp_set_decimal_from_substraction(&la, ((math_data *)mp->math)->twelve_ln_2_k, la);
-    /*mp_decimal_ab_vs_cd (mp,&ab_vs_cd, ((math_data *)mp->math)->one_k, la, xa, xa);*/
     mp_ab_vs_cd (mp,&ab_vs_cd, ((math_data *)mp->math)->one_k, la, xa, xa);
   } while (mp_number_less(ab_vs_cd,((math_data *)mp->math)->zero_t));
   mp_number_clone (ret, xa);
@@ -1825,32 +1979,32 @@ static void mp_decimal_m_norm_rand (MP mp, mp_number *ret) {
 
 
 
-@ The following subroutine could be used  in norm_rand and tests  if $ab$ is
+@ The following subroutine could be used  in |norm_rand| and tests  if $ab$ is
 greater than, equal to, or less than~$cd$.
 The result is $+1$, 0, or~$-1$ in the three respective cases.
-This is not necessary, even if it's shorter than the current ab_vs_cd 
-and looks as a native implememtation.
+This is not necessary, even if it's shorter than the current |ab_vs_cd| 
+and looks as a native implementation.
 
 @c
 /* 
-void mp_decimal_ab_vs_cd (MP mp, mp_number *ret, mp_number a_orig, mp_number b_orig, mp_number c_orig, mp_number d_orig) {
-  decNumber a, b, c, d;
-  decNumber ab, cd;
-  (void)mp;
-
-  decNumberCopy(&a, (decNumber *)a_orig.data.num);
-  decNumberCopy(&b, (decNumber *)b_orig.data.num);
-  decNumberCopy(&c, (decNumber *)c_orig.data.num);
-  decNumberCopy(&d, (decNumber *)d_orig.data.num);
-
-
-  decNumberMultiply (&ab, (decNumber *)a_orig.data.num, (decNumber *)b_orig.data.num, &set);
-  decNumberMultiply (&cd, (decNumber *)c_orig.data.num, (decNumber *)d_orig.data.num, &set);
-  decNumberCompare(ret->data.num, &ab, &cd, &set);
-  mp_check_decNumber(mp, ret->data.num, &set);
-  return;
-
-}
+|void mp_decimal_ab_vs_cd (MP mp, mp_number *ret, mp_number a_orig, mp_number b_orig, mp_number c_orig, mp_number d_orig) {|
+|  decNumber a, b, c, d;|
+|  decNumber ab, cd;|
+|  (void)mp;|
+||
+|  decNumberCopy(&a, (decNumber *)a_orig.data.num);|
+|  decNumberCopy(&b, (decNumber *)b_orig.data.num);|
+|  decNumberCopy(&c, (decNumber *)c_orig.data.num);|
+|  decNumberCopy(&d, (decNumber *)d_orig.data.num);|
+||
+||
+|  decNumberMultiply (&ab, (decNumber *)a_orig.data.num, (decNumber *)b_orig.data.num, &set);|
+|  decNumberMultiply (&cd, (decNumber *)c_orig.data.num, (decNumber *)d_orig.data.num, &set);|
+|  decNumberCompare(ret->data.num, &ab, &cd, &set);|
+|  mp_check_decNumber(mp, ret->data.num, &set);|
+|  return;|
+||
+|}|
 */
 
 

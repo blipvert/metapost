@@ -1,3 +1,112 @@
+2019-03-30  Hironobu Yamashita  <h.y.acetaminophen@gmail.com>
+
+	* ppltotf.man, ptftopl.man: new.
+
+2019-03-25  Karl Berry  <karl@freefriends.org>
+
+	* gftodvi.man: omit unused second font letter. From Debian.
+
+2019-03-10  Andreas Scherer  <https://ascherer.github.io>
+
+	* ctwill.man: Fix non-macro '\\PB';
+	add reference to 'Digital Typography' with full example.
+
+2019-02-01  Andreas Scherer  <https://ascherer.github.io>
+
+	* ctwill.man,
+	* cweb.man: Recompile manpages with Pandoc 2.6.  This un-escapes
+	'-', because it was rendered as "unicode minus"; see release page
+	https://github.com/jgm/pandoc/releases/tag/2.6
+
+2019-01-28  Andreas Scherer  <https://ascherer.github.io>
+
+	* ctwill.man,
+	* cweb.man: Updated manpages; describe differences to original CWEB.
+
+2019-01-10  Andreas Scherer  <https://ascherer.github.io>
+
+	* ctwill.man: New manpage for CTWILL and its tools.
+	* Makefile.am (bootstrap_man_sources): add ctwill.man.
+	(man1_links): add ctwill-refsort and ctwill-twinx as ctwill aliases.
+
+2019-01-10  Andreas Scherer  <https://ascherer.github.io>
+
+	* cweb.man: editorial changes.
+
+2019-01-06  Andreas Scherer  <https://ascherer.github.io>
+
+	* cweb.man: update for CWEBbin options, etc.
+
+2018-12-21  Karl Berry  <karl@freefriends.org>
+
+	* mpost.man: mention rmpost, (r)pmpost, and (r)upmpost.
+
+2018-10-28  Andreas Scherer  <https://ascherer.github.io>
+
+	* cweb.man: do not mention nonexistent -DSTAT option.
+
+2018-06-04  Karl Berry  <karl@tug.org>
+
+	* Makefile.am (man_sources, man1_links) [PTEX]: add ptex.man.
+
+2018-05-27  Karl Berry  <karl@tug.org>
+
+	* aleph.man,
+	* etex.man,
+	* luatex.man,
+	* mft.man,
+	* ptex.man: typos.
+
+2018-05-26  Hironobu Yamashita  <h.y.acetaminophen@gmail.com>
+
+	* ptex.man: new.
+
+2018-04-30  Karl Berry  <karl@tug.org>
+
+	* latex.man: update latexrefman url to
+	https://ctan.org/pkg/latex2e-help-texinfo.
+	tldoc report from Antoon, 27 Apr 2018 22:15:39.
+	Also add more *latex program names as aliases.
+
+2018-02-23  Karl Berry  <karl@freefriends.org>
+
+	* bibtex.man: mention need to remove aux file from previous run
+	for -min-crossrefs to be effective.
+	https://tex.stackexchange.com/questions/123740
+
+2018-01-18  Karl Berry  <karl@freefriends.org>
+
+	* mf.man: spacing, no openin, per Debian.
+
+2017-01-13  Karl Berry  <karl@tug.org>
+
+	* ofm2opl.man,
+	* opl2ofm.man,
+	* ovf2ovp.man,
+	* ovp2ovf.man: specify section 1. Report from Julian Gilbey.
+
+2016-04-14  Karl Berry  <karl@freefriends.org>
+
+	* ofm2opl.man,
+	* ovf2ovp.man: document current options, i.e., from the omfonts
+	(../omegafonts) implementation.  Akira re-implemented the web
+	-charcode-format option in r39877, ca.27 Feb 2016 10:23:20.
+
+2016-03-08  Karl Berry  <karl@tug.org>
+
+	* ttf2afm.man: document -m.  tldoc mail from esr, 7 Mar 2016 09:34:07.
+
+2015-06-16  Karl Berry  <karl@tug.org>
+
+	* *.man: remove spurious "for troff" and "for nroff" non-comments.
+	https://bugs.debian.org/cgi-bin/bugreport.cgi?bug=663157
+	Report from Tom Yan, tex-live mail 2 Jun 2015 03:28:32.
+	Also replace pseudo-smallcaps M\s-2ETAFONT\s0 with standard "Metafont".
+	* *.min: remove these long-gone programs.
+	* Makefile.am (EXTRA_DIST): remove *.min.
+	(man1_links) [TEX]: include initex.
+	(man1_links) [MF]: include inimf.
+
 2015-04-27  Karl Berry  <karl@tug.org>
 
  	* aleph.man,
@@ -128,8 +237,7 @@
 
 2009-06-26  Han The Thanh <hanthethanh@gmail.com>
 
-	* pdftex.man: bugfix from Török Edwin <edwintorok@gmail.com>
-
+	* pdftex.man: bugfix from T\"or\"ok Edwin <edwintorok@gmail.com>
 
 2009-04-05  Karl Berry  <karl@tug.org>
 
@@ -174,7 +282,7 @@
 	be converted before being included.  Credit Peter Breitenlohner in
 	AUTHORS for eTeX contributions.
 
-2007-01-08  Martin SchrÃ¶der <martin@pdftex.org>
+2007-01-08  Martin Schr\"oder <martin@pdftex.org>
 
 	* pdfetex.man, pdftex.man: Document -etex and -draftmode switches.
 
@@ -826,3 +934,5 @@ Sat Jan 11 08:47:26 1992  Karl Berry  (karl at hayley)
 Tue Jan  7 16:04:29 1992  Karl Berry  (karl at hayley)
 
 	* Use `1 Jan 1992' date format.
+
+(This ChangeLog file public domain.)

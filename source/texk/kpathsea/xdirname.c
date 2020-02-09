@@ -1,6 +1,6 @@
 /* xdirname.c: return the directory part of a path.
 
-   Copyright 1999, 2008, 2011 Karl Berry.
+   Copyright 1999, 2008, 2011, 2016, 2017 Karl Berry.
    Copyright 2005 Olaf Weber.
 
    This library is free software; you can redistribute it and/or
@@ -32,7 +32,6 @@ xdirname (const_string name)
     unsigned limit = 0, loc;
 #if defined(WIN32)
     string p;
-    unsigned i, j;
 #endif
 
     /* Ignore a NULL name. */
@@ -43,15 +42,9 @@ xdirname (const_string name)
         limit = 2;
     } else if (IS_UNC_NAME(name)) {
         for (limit = 2; name[limit] && !IS_DIR_SEP (name[limit]); limit++)
-#if defined(WIN32)
-            if (IS_KANJI(name+limit)) limit++
-#endif
             ;
         if (name[limit++] && name[limit] && !IS_DIR_SEP (name[limit])) {
             for (; name[limit] && !IS_DIR_SEP (name[limit]); limit++)
-#if defined(WIN32)
-                if (IS_KANJI(name+limit)) limit++
-#endif
                 ;
             limit--;
         } else
@@ -59,17 +52,11 @@ xdirname (const_string name)
             limit = 0;
     }
 
-#if defined(WIN32)
-    j = loc = limit;
-    if (j > 2) j++;
-    for (i = j; name[i]; i++) {
-        if (IS_DIR_SEP (name[i])) {
-            j = i;
-            for (i++; IS_DIR_SEP (name[i]); i++)
-                ;
-            loc = i + 1;
-        } else if (IS_KANJI(name+i)) i++;
-    }
+#if defined(WIN32) && defined (KPSE_COMPAT_API)
+    for (loc = strlen (name); loc > limit &&
+         (!IS_DIR_SEP (name[loc-1]) ||
+         (loc > 1 && IS_KANJI(name+loc-2))); loc--)
+        ;
 #else
     for (loc = strlen (name); loc > limit && !IS_DIR_SEP (name[loc-1]); loc--)
         ;
@@ -90,9 +77,12 @@ xdirname (const_string name)
         }
     } else {
         /* If have ///a, must return /, so don't strip off everything.  */
-#if defined(WIN32)
-        loc = j;
-        if (loc == limit && IS_DIR_SEP (name[loc])) loc++;
+#if defined(WIN32) && defined (KPSE_COMPAT_API)
+        while (loc > limit+1 && IS_DIR_SEP (name[loc-1])) {
+            if (loc > 1 && IS_KANJI(name+loc-2))
+                break;
+            loc--;
+        }
 #else
         while (loc > limit+1 && IS_DIR_SEP (name[loc-1])) {
             loc--;
@@ -107,8 +97,10 @@ xdirname (const_string name)
     for (p = ret; *p; p++) {
         if (*p == '\\')
             *p = '/';
+#if defined (KPSE_COMPAT_API)
         else if (IS_KANJI(p))
             p++;
+#endif
     }
 #endif
 

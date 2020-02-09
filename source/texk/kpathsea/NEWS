@@ -1,6 +1,28 @@
+$Id: NEWS 50836 2019-04-07 01:42:55Z karl $
 This file records noteworthy changes.  (Public domain.)
 
-6.2.1 (for TeX Live 2015)
+6.3.1 (for TeX Live 2019, 7 April 2019)
+* kpsewhich --var-value does brace expansion as well as variable and
+  tilde expansion.
+* The kpathsea_path_search() and related functions always recognize either
+  common path separator (: or ;) when splitting paths into elements.
+  (Before, there were some unusual contexts where this did not happen.)
+
+6.3.0 (for TeX Live 2018, 14 April 2018)
+* New configuration value texmf_casefold_search to fall back to
+  case-insensitive search in non-system directories if there is no exact
+  match; only relevant on Unix.
+
+6.2.3 (for TeX Live 2017, 19 May 2017)
+* .OTF treated like .otf.
+* texmf.cnf: mpost removed from default shell_escape_commands.
+* texmf.cnf: TEXINPUTS.luajitlatex added.
+* texmf.cnf: default bibtex capacities increased.
+
+6.2.2 (for TeX Live 2016, 21 May 2016)
+* gregorio added to default shell_escape_commands.
+
+6.2.1 (for TeX Live 2015, 21 May 2015)
 * search path information output with new option --help-formats to kpsewhich,
   no longer with --help.
 * install <kpathsea/c-auto.h> in an architecture dependent location

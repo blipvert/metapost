@@ -1,6 +1,6 @@
 /* xbasename.c: return the last element in a path.
 
-   Copyright 1992, 1994, 1995, 1996, 2008, 2011 Karl Berry.
+   Copyright 1992, 1994, 1995, 1996, 2008, 2011, 2016, 2017 Karl Berry.
    Copyright 2005 Olaf Weber.
 
    This library is free software; you can redistribute it and/or
@@ -38,15 +38,9 @@ xbasename (const_string name)
         unsigned limit;
 
         for (limit = 2; name[limit] && !IS_DIR_SEP (name[limit]); limit++)
-#if defined(WIN32)
-            if (IS_KANJI(name+limit)) limit++
-#endif
             ;
         if (name[limit++] && name[limit] && !IS_DIR_SEP (name[limit])) {
             for (; name[limit] && !IS_DIR_SEP (name[limit]); limit++)
-#if defined(WIN32)
-                if (IS_KANJI(name+limit)) limit++
-#endif
                 ;
         } else
             /* malformed UNC name, backup */
@@ -57,7 +51,7 @@ xbasename (const_string name)
     for (p = base; *p; p++) {
         if (IS_DIR_SEP(*p))
             base = p + 1;
-#if defined(WIN32)
+#if defined(WIN32) && defined (KPSE_COMPAT_API)
         else if (IS_KANJI(p))
             p++;
 #endif

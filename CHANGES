@@ -2,6 +2,30 @@
 This file is public domain.
 
 ----------------------------------------------------------------------
+What is new in MetaPost version 2.0rc2:
+----------------------------------------------------------------------
+
+* Small cleanup of the code
+* Bump to version 2.0rc2: the current version is 2.00
+* Added the envelope primitives to mpman
+
+
+----------------------------------------------------------------------
+What is new in MetaPost version 2.0rc1:
+----------------------------------------------------------------------
+
+* Mainly fixes for wrong path directions, minor issues on tfm and png
+  backend. The version says "2.000" to keep the version as a valid
+  number.
+
+
+----------------------------------------------------------------------
+What is new in MetaPost version 1.9991:
+----------------------------------------------------------------------
+
+* Some issues fixed, but really this is in preparation of metapost 2.0.
+
+----------------------------------------------------------------------
 What is new in MetaPost version 1.999:
 ----------------------------------------------------------------------
 

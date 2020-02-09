@@ -1,4 +1,4 @@
-/* texmf.h: Main include file for TeX and Metafont in C. This file is
+/* texmfmp.h: Main include file for TeX and MF in C. This file is
    included by {tex,mf}d.h, which is the first include in the C files
    output by web2c.  */
 
@@ -89,8 +89,16 @@ typedef void* voidpointer;
 #define OUT_BUF dvibuf
 #endif /* TeX */
 #ifdef MF
+#if defined(MFLua)
+#define TEXMFPOOLNAME "mflua.pool"
+#define TEXMFENGINENAME "mflua"
+#elif defined(MFLuaJIT)
+#define TEXMFPOOLNAME "mfluajit.pool"
+#define TEXMFENGINENAME "mfluajit"
+#else
 #define TEXMFPOOLNAME "mf.pool"
 #define TEXMFENGINENAME "metafont"
+#endif
 #define DUMP_FILE basefile
 #define DUMP_FORMAT kpse_base_format
 #define writegf WRITE_OUT
@@ -111,17 +119,23 @@ typedef void* voidpointer;
 /* Hacks for TeX that are better not to #ifdef, see lib/openclose.c.  */
 extern int tfmtemp, texinputtype;
 
-/* pdfTeX routines also used for e-pTeX and e-upTeX */
-#if defined (pdfTeX) || defined (epTeX) || defined (eupTeX)
-extern char start_time_str[];
+/* pdfTeX routines also used for e-pTeX, e-upTeX, and XeTeX */
+#if defined (pdfTeX) || defined (epTeX) || defined (eupTeX) || defined(XeTeX)
+#if !defined (pdfTeX)
 extern void pdftex_fail(const char *fmt, ...);
+#endif
+extern char start_time_str[];
 extern void initstarttime(void);
+#if !defined(XeTeX)
 extern char *makecstring(integer s);
 extern char *makecfilename(integer s);
+#endif /* !XeTeX */
 extern void getcreationdate(void);
 extern void getfilemoddate(integer s);
 extern void getfilesize(integer s);
 extern void getfiledump(integer s, int offset, int length);
+extern void convertStringToHexString(const char *in, char *out, int lin);
+extern void getmd5sum(integer s, int file);
 #endif
 
 /* pdftex etc. except for tex use these for pipe support */
@@ -206,7 +220,7 @@ extern boolean input_line (FILE *);
 #define	dateandtime(i,j,k,l) get_date_and_time (&(i), &(j), &(k), &(l))
 extern void get_date_and_time (integer *, integer *, integer *, integer *);
 
-#if defined(pdfTeX)
+#if defined(pdfTeX) || defined(epTeX) || defined(eupTeX) || defined(XeTeX)
 /* Get high-res time info. */
 #define secondsandmicros(i,j) get_seconds_and_micros (&(i), &(j))
 extern void get_seconds_and_micros (integer *, integer *);
@@ -260,9 +274,12 @@ extern void topenin (void);
 #ifdef XeTeX
 #if ENABLE_PIPES
 extern boolean u_open_in_or_pipe(unicodefile* f, integer filefmt, const_string fopen_mode, integer mode, integer encodingData);
+extern void u_close_file_or_pipe(unicodefile* f);
 #define uopenin(f,p,m,d) u_open_in_or_pipe(&(f), p, FOPEN_RBIN_MODE, m, d)
+#define uclose(f) u_close_file_or_pipe(&(f))
 #else
 #define uopenin(f,p,m,d) u_open_in(&(f), p, FOPEN_RBIN_MODE, m, d)
+#define uclose(f) u_close_inout(&(f))
 #endif
 #endif
 
@@ -290,6 +307,13 @@ extern void paintrow (/*screenrow, pixelcolor, transspec, screencol*/);
 #define	undumpthings(base, len) \
   do_undump ((char *) &(base), sizeof (base), (int) (len), DUMP_FILE)
 
+#ifndef PRIdPTR
+#define PRIdPTR "ld"
+#endif
+#ifndef PRIxPTR
+#define PRIxPTR "lx"
+#endif
+
 /* Like do_undump, but check each value against LOW and HIGH.  The
    slowdown isn't significant, and this improves the chances of
    detecting incompatible format files.  In fact, Knuth himself noted
@@ -301,9 +325,10 @@ extern void paintrow (/*screenrow, pixelcolor, transspec, screencol*/);
     undumpthings (base, len);                                           \
     for (i = 0; i < (len); i++) {                                       \
       if ((&(base))[i] < (low) || (&(base))[i] > (high)) {              \
-        FATAL5 ("Item %u (=%ld) of .fmt array at %lx <%ld or >%ld",     \
-                i, (unsigned long) (&(base))[i], (unsigned long) &(base),\
-                (unsigned long) low, (unsigned long) high);                   \
+        FATAL5 ("Item %u (=%" PRIdPTR ") of .fmt array at %" PRIxPTR    \
+                " <%" PRIdPTR " or >%" PRIdPTR,                         \
+                i, (uintptr_t) (&(base))[i], (uintptr_t) &(base),       \
+                (uintptr_t) low, (uintptr_t) high);                     \
       }                                                                 \
     }									\
   } while (0)
@@ -317,14 +342,15 @@ extern void paintrow (/*screenrow, pixelcolor, transspec, screencol*/);
     undumpthings (base, len);                                           \
     for (i = 0; i < (len); i++) {                                       \
       if ((&(base))[i] > (high)) {              			\
-        FATAL4 ("Item %u (=%ld) of .fmt array at %lx >%ld",     	\
-                i, (unsigned long) (&(base))[i], (unsigned long) &(base),\
-                (unsigned long) high);                         		\
+        FATAL4 ("Item %u (=%" PRIdPTR ") of .fmt array at %" PRIxPTR    \
+                " >%" PRIdPTR,                                          \
+                i, (uintptr_t) (&(base))[i], (uintptr_t) &(base),       \
+                (uintptr_t) high);                         		\
       }                                                                 \
     }									\
   } while (0)
 
-/* We define the routines to do the actual work in texmf.c.  */
+/* We define the routines to do the actual work in texmfmp.c.  */
 #ifdef XeTeX
 #include <zlib.h>
 extern void do_dump (char *, int, int, gzFile);

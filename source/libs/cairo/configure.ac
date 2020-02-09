@@ -9,7 +9,7 @@ dnl
 m4_include([version.ac])[] dnl define cairo_version
 AC_INIT([cairo (TeX Live)], cairo_version, [tex-k@tug.org])
 AC_PREREQ([2.65])
-AC_CONFIG_SRCDIR([cairo-]cairo_version[/src/cairo.h])
+AC_CONFIG_SRCDIR([cairo-src/src/cairo.h])
 AC_CONFIG_AUX_DIR([../../build-aux])
 AC_CONFIG_MACRO_DIRS([../../m4 m4])
 
@@ -66,7 +66,7 @@ dnl
 [1, [mime surface]],
 [1, [observer surface]],
 [1, [recording surface]],
-[0, [pdf surface]],
+[1, [pdf surface]],
 [0, [ps surface]],
 [0, [quartz surface]],
 [0, [script surface]],
@@ -92,7 +92,7 @@ KPSE_RESTORE_FLAGS
 echo timestamp >config.force
 fi
 
-AC_SUBST([CAIRO_TREE], [cairo-]cairo_version)
+AC_SUBST([CAIRO_TREE], [cairo-src])
 
 AC_CONFIG_FILES([Makefile cairo/Makefile])
 

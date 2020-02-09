@@ -1,7 +1,9 @@
+## $Id: Makefile.am 48953 2018-10-20 04:37:38Z kakuto $
 ## Proxy Makefile.am to build cairo for TeX Live.
 ##
-##   Copyright (C) 2012 Taco Hoekwater <taco@metatex.org>
-##   Copyright (C) 2013-2015 Peter Breitenlohner <tex-live@tug.org>
+##   Copyright 2016-2017 Karl Berry <tex-live@tug.org>
+##   Copyright 2013-2015 Peter Breitenlohner <tex-live@tug.org>
+##   Copyright 2012 Taco Hoekwater <taco@metatex.org>
 ##
 ##   This file is free software; the copyright holder
 ##   gives unlimited permission to copy and/or distribute it,
@@ -13,7 +15,7 @@ EXTRA_DIST = $(CAIRO_TREE)
 
 ## Changes applied to the original source tree
 ##
-EXTRA_DIST += $(CAIRO_TREE)-PATCHES
+EXTRA_DIST += TLpatches
 
 CAIRO_SRC = $(CAIRO_TREE)/src
 
@@ -224,6 +226,7 @@ check_PROGRAMS = cairotst
 dist_check_SCRIPTS = cairo.test
 TESTS = cairo.test
 endif build
+cairo.log: cairotst$(EXEEXT)
 
 cairotst_SOURCES = cairotst.c
 

@@ -1,6 +1,6 @@
 /* The help messages for TeX & MF family of programs.
 
-Copyright 1995, 1996, 2008 - 2011 Karl Berry.
+Copyright 1995, 1996, 2008-2016 Karl Berry.
 Copyright 2001-05 Olaf Weber.
 
 This program is free software; you can redistribute it and/or modify
@@ -124,15 +124,13 @@ const_string EPTEXHELP[] = {
     "-recorder               enable filename recorder",
     "[-no]-shell-escape      disable/enable \\write18{SHELL COMMAND}",
     "-shell-restricted       enable restricted \\write18",
-#if defined(WIN32)
-    "-sjis-terminal          always output to stdout and stderr by CP932",
-#endif
     "-src-specials           insert source specials into the DVI file",
     "-src-specials=WHERE     insert source specials in certain places of",
     "                          the DVI file. WHERE is a comma-separated value",
     "                          list: cr display hbox math par parend vbox",
 #if defined(__SyncTeX__)
-    "-synctex=NUMBER         generate SyncTeX data for previewers if nonzero",
+    "-synctex=NUMBER         generate SyncTeX data for previewers according to",
+    "                          bits of NUMBER (`man synctex' for details)",
 #endif
     "-translate-file=TCXNAME use the TCX file TCXNAME",
     "-help                   print this message and exit.",
@@ -192,7 +190,8 @@ const_string ETEXHELP[] = {
     "                          the DVI file. WHERE is a comma-separated value",
     "                          list: cr display hbox math par parend vbox",
 #if defined(__SyncTeX__)
-    "-synctex=NUMBER         generate SyncTeX data for previewers if nonzero",
+    "-synctex=NUMBER         generate SyncTeX data for previewers according to",
+    "                          bits of NUMBER (`man synctex' for details)",
 #endif
     "-translate-file=TCXNAME use the TCX file TCXNAME",
     "-8bit                   make all characters printable by default",
@@ -252,15 +251,13 @@ const_string EUPTEXHELP[] = {
     "-recorder               enable filename recorder",
     "[-no]-shell-escape      disable/enable \\write18{SHELL COMMAND}",
     "-shell-restricted       enable restricted \\write18",
-#if defined(WIN32)
-    "-sjis-terminal          always output to stdout and stderr by CP932",
-#endif
     "-src-specials           insert source specials into the DVI file",
     "-src-specials=WHERE     insert source specials in certain places of",
     "                          the DVI file. WHERE is a comma-separated value",
     "                          list: cr display hbox math par parend vbox",
 #if defined(__SyncTeX__)
-    "-synctex=NUMBER         generate SyncTeX data for previewers if nonzero",
+    "-synctex=NUMBER         generate SyncTeX data for previewers according to",
+    "                          bits of NUMBER (`man synctex' for details)",
 #endif
     "-translate-file=TCXNAME use the TCX file TCXNAME",
     "-help                   print this message and exit.",
@@ -269,7 +266,7 @@ const_string EUPTEXHELP[] = {
 };
 #endif /* eupTeX */
 
-#ifdef MF
+#ifdef onlyMF
 const_string MFHELP[] = {
     "Usage: mf [OPTION]... [MFNAME[.mf]] [COMMANDS]",
     "   or: mf [OPTION]... \\FIRST-LINE",
@@ -312,7 +309,97 @@ const_string MFHELP[] = {
     "-version                output version information and exit",
     NULL
 };
-#endif /* MF */
+#endif /* onlyMF */
+
+#ifdef MFLua
+const_string MFLUAHELP[] = {
+    "Usage: mflua [OPTION]... [MFNAME[.mf]] [COMMANDS]",
+    "   or: mflua [OPTION]... \\FIRST-LINE",
+    "   or: mflua [OPTION]... &BASE ARGS",
+    "  Run MFLua on MFNAME, usually creating MFNAME.tfm and MFNAME.NNNNgf,",
+    "  where NNNN is the resolution of the specified mode (2602 by default).",
+    "  Any following COMMANDS are processed as Metafont input,",
+    "  after MFNAME is read.",
+    "  If the first line of MFNAME is %&BASE, and BASE is an existing .base file,",
+    "  use it.  Else use `NAME.base', where NAME is the program invocation name,",
+    "  most commonly `mf'.",
+    "",
+    "  Alternatively, if the first non-option argument begins with a backslash,",
+    "  interpret all non-option arguments as a line of Metafont input.",
+    "",
+    "  Alternatively, if the first non-option argument begins with a &, the",
+    "  next word is taken as the BASE to read, overriding all else. Any",
+    "  remaining arguments are processed as above.",
+    "",
+    "  If no arguments or options are specified, prompt for input.",
+    "",
+    "-base=BASENAME          use BASENAME instead of program name or a %& line",
+    "[-no]-file-line-error   disable/enable file:line:error style messages",
+    "-halt-on-error          stop processing at the first error",
+    "-ini                    be inimf, for dumping bases; this is implicitly",
+    "                          true if the program name is `inimf'",
+    "-interaction=STRING     set interaction mode (STRING=batchmode/nonstopmode/",
+    "                          scrollmode/errorstopmode)",
+    "-jobname=STRING         set the job name to STRING",
+    "-kpathsea-debug=NUMBER  set path searching debugging flags according to",
+    "                          the bits of NUMBER",
+    "[-no]-mktex=FMT         disable/enable mktexFMT generation (FMT=mflua)",
+    "-output-directory=DIR   use existing DIR as the directory to write files in",
+    "[-no]-parse-first-line  disable/enable parsing of first line of input file",
+    "-progname=STRING        set program (and base) name to STRING",
+    "-recorder               enable filename recorder",
+    "-translate-file=TCXNAME use the TCX file TCXNAME",
+    "-8bit                   make all characters printable by default",
+    "-help                   display this help and exit",
+    "-version                output version information and exit",
+    NULL
+};
+#endif /* MFLua */
+
+#ifdef MFLuaJIT
+const_string MFLUAJITHELP[] = {
+    "Usage: mfluajit [OPTION]... [MFNAME[.mf]] [COMMANDS]",
+    "   or: mfluajit [OPTION]... \\FIRST-LINE",
+    "   or: mfluajit [OPTION]... &BASE ARGS",
+    "  Run MFLuaJIT on MFNAME, usually creating MFNAME.tfm and MFNAME.NNNNgf,",
+    "  where NNNN is the resolution of the specified mode (2602 by default).",
+    "  Any following COMMANDS are processed as Metafont input,",
+    "  after MFNAME is read.",
+    "  If the first line of MFNAME is %&BASE, and BASE is an existing .base file,",
+    "  use it.  Else use `NAME.base', where NAME is the program invocation name,",
+    "  most commonly `mf'.",
+    "",
+    "  Alternatively, if the first non-option argument begins with a backslash,",
+    "  interpret all non-option arguments as a line of Metafont input.",
+    "",
+    "  Alternatively, if the first non-option argument begins with a &, the",
+    "  next word is taken as the BASE to read, overriding all else. Any",
+    "  remaining arguments are processed as above.",
+    "",
+    "  If no arguments or options are specified, prompt for input.",
+    "",
+    "-base=BASENAME          use BASENAME instead of program name or a %& line",
+    "[-no]-file-line-error   disable/enable file:line:error style messages",
+    "-halt-on-error          stop processing at the first error",
+    "-ini                    be inimf, for dumping bases; this is implicitly",
+    "                          true if the program name is `inimf'",
+    "-interaction=STRING     set interaction mode (STRING=batchmode/nonstopmode/",
+    "                          scrollmode/errorstopmode)",
+    "-jobname=STRING         set the job name to STRING",
+    "-kpathsea-debug=NUMBER  set path searching debugging flags according to",
+    "                          the bits of NUMBER",
+    "[-no]-mktex=FMT         disable/enable mktexFMT generation (FMT=mflua)",
+    "-output-directory=DIR   use existing DIR as the directory to write files in",
+    "[-no]-parse-first-line  disable/enable parsing of first line of input file",
+    "-progname=STRING        set program (and base) name to STRING",
+    "-recorder               enable filename recorder",
+    "-translate-file=TCXNAME use the TCX file TCXNAME",
+    "-8bit                   make all characters printable by default",
+    "-help                   display this help and exit",
+    "-version                output version information and exit",
+    NULL
+};
+#endif /* MFLuaJIT */
 
 #ifdef pdfTeX
 const_string PDFTEXHELP[] = {
@@ -368,12 +455,15 @@ const_string PDFTEXHELP[] = {
     "                          the DVI file. WHERE is a comma-separated value",
     "                          list: cr display hbox math par parend vbox",
 #if defined(__SyncTeX__)
-    "-synctex=NUMBER         generate SyncTeX data for previewers if nonzero",
+    "-synctex=NUMBER         generate SyncTeX data for previewers according to",
+    "                          bits of NUMBER (`man synctex' for details)",
 #endif
     "-translate-file=TCXNAME use the TCX file TCXNAME",
     "-8bit                   make all characters printable by default",
     "-help                   display this help and exit",
     "-version                output version information and exit",
+    "",
+    "pdfTeX home page: <http://pdftex.org>",
     NULL
 };
 #endif /* pdfTeX */
@@ -427,15 +517,13 @@ const_string PTEXHELP[] = {
     "-recorder               enable filename recorder",
     "[-no]-shell-escape      disable/enable \\write18{SHELL COMMAND}",
     "-shell-restricted       enable restricted \\write18",
-#if defined(WIN32)
-    "-sjis-terminal          always output to stdout and stderr by CP932",
-#endif
     "-src-specials           insert source specials into the DVI file",
     "-src-specials=WHERE     insert source specials in certain places of",
     "                          the DVI file. WHERE is a comma-separated value",
     "                          list: cr display hbox math par parend vbox",
 #if defined(__SyncTeX__)
-    "-synctex=NUMBER         generate SyncTeX data for previewers if nonzero",
+    "-synctex=NUMBER         generate SyncTeX data for previewers according to",
+    "                          bits of NUMBER (`man synctex' for details)",
 #endif
     "-translate-file=TCXNAME use the TCX file TCXNAME",
     "-help                   print this message and exit.",
@@ -494,7 +582,8 @@ const_string TEXHELP[] = {
     "                          the DVI file. WHERE is a comma-separated value",
     "                          list: cr display hbox math par parend vbox",
 #if defined(__SyncTeX__)
-    "-synctex=NUMBER         generate SyncTeX data for previewers if nonzero",
+    "-synctex=NUMBER         generate SyncTeX data for previewers according to",
+    "                          bits of NUMBER (`man synctex' for details)",
 #endif
     "-translate-file=TCXNAME use the TCX file TCXNAME",
     "-8bit                   make all characters printable by default",
@@ -553,15 +642,13 @@ const_string UPTEXHELP[] = {
     "-recorder               enable filename recorder",
     "[-no]-shell-escape      disable/enable \\write18{SHELL COMMAND}",
     "-shell-restricted       enable restricted \\write18",
-#if defined(WIN32)
-    "-sjis-terminal          always output to stdout and stderr by CP932",
-#endif
     "-src-specials           insert source specials into the DVI file",
     "-src-specials=WHERE     insert source specials in certain places of",
     "                          the DVI file. WHERE is a comma-separated value",
     "                          list: cr display hbox math par parend vbox",
 #if defined(__SyncTeX__)
-    "-synctex=NUMBER         generate SyncTeX data for previewers if nonzero",
+    "-synctex=NUMBER         generate SyncTeX data for previewers according to",
+    "                          bits of NUMBER (`man synctex' for details)",
 #endif
     "-translate-file=TCXNAME use the TCX file TCXNAME",
     "-help                   print this message and exit.",
@@ -618,7 +705,8 @@ const_string XETEXHELP[] = {
     "                          the XDV file. WHERE is a comma-separated value",
     "                          list: cr display hbox math par parend vbox",
 #if defined(__SyncTeX__)
-    "-synctex=NUMBER         generate SyncTeX data for previewers if nonzero",
+    "-synctex=NUMBER         generate SyncTeX data for previewers according to",
+    "                          bits of NUMBER (`man synctex' for details)",
 #endif
     "-translate-file=TCXNAME (ignored)",
     "-8bit                   make all characters printable, don't use ^^X sequences",

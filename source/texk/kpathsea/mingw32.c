@@ -1,6 +1,6 @@
 /* mingw32.c: bits and pieces for mingw32
 
-   Copyright 2009-2013 Taco Hoekwater <taco@luatex.org>.
+   Copyright 2009-2017 Taco Hoekwater <taco@luatex.org>.
 
    This library is free software; you can redistribute it and/or
    modify it under the terms of the GNU Lesser General Public
@@ -47,6 +47,12 @@ extern int __cdecl _free_osfhnd (int fd);
 
 static char *get_home_directory (void);
 static int _parse_root (char * name, char ** pPath);
+
+double
+win32_floor (double x)
+{
+  return floor (x);
+}
 
 void
 init_user_info (void)
@@ -404,19 +410,33 @@ void texlive_gs_init(void)
   char *nptr, *path;
   char tlgsbindir[512];
   char tlgslibdir[512];
+  char resourcedir[512];
   nptr = kpse_var_value("TEXLIVE_WINDOWS_EXTERNAL_GS");
-  if (nptr == NULL || !strcmp(nptr, "0") || !strcmp(nptr, "n") || !strcmp(nptr, "f")) {
+  if (nptr == NULL || *nptr == '0' || *nptr == 'n' || *nptr == 'f') {
     if (nptr)
       free (nptr);
     nptr = kpse_var_value("SELFAUTOPARENT");
     if (nptr) {
       strcpy(tlgsbindir, nptr);
       strcat(tlgsbindir,"/tlpkg/tlgs");
+      strcpy(resourcedir, tlgsbindir);
+      strcat(resourcedir, "/Resource");
       if(is_dir(tlgsbindir)) {
         strcpy(tlgslibdir, tlgsbindir);
         strcat(tlgslibdir, "/lib;");
-        strcat(tlgslibdir, tlgsbindir);
-        strcat(tlgslibdir, "/fonts");
+        if(is_dir(resourcedir)) {
+          strcat(tlgslibdir, tlgsbindir);
+          strcat(tlgslibdir, "/fonts;");
+          strcat(tlgslibdir, tlgsbindir);
+          strcat(tlgslibdir, "/Resource/Init;");
+          strcat(tlgslibdir, tlgsbindir);
+          strcat(tlgslibdir, "/Resource;");
+          strcat(tlgslibdir, tlgsbindir);
+          strcat(tlgslibdir, "/kanji");
+        } else {
+          strcat(tlgslibdir, tlgsbindir);
+          strcat(tlgslibdir, "/fonts");
+        }
         strcat(tlgsbindir, "/bin;");
         free(nptr);
         for(nptr = tlgsbindir; *nptr; nptr++) {

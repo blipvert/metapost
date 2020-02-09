@@ -1,3 +1,82 @@
+2019-01-28  Andreas Scherer  <https://ascherer.github.io>
+	* mpost.w: TeXnical nitpicking.
+
+
+2019-01-26  Luigi Scarso  <luigi.scarso@gmail.com>
+	* Fixed bisection algorithm (overflow of number of bisections in decimal mode with  low precision)
+	* Added 2 levels to the bisection algorithm for cubic intersection. Need testing.
+	* Fixed a buffer overflow on command line; for consistency with mp_reallocate_buffer, 
+	  now accepting input from command line  of at most  0xFFFFFFF bytes.
+
+
+2019-01-06  Luigi Scarso  <luigi.scarso@gmail.com>
+	* Added r-mpost as an alias for mpost --restricted 
+
+
+2018-10-22  Luigi Scarso  <luigi.scarso@gmail.com>
+	* Fixed a bug in cubic intersection in arbitrary precision math with low precision. 
+	* Raised minimal precision to 2 for decimal and binary mode.
+	* Added 3 levels to the bisection algorithm for for cubic intersection.
+
+2018-08-27  Luigi Scarso  <luigi.scarso@gmail.com>
+	* separation of mpmathbinary from the the core
+
+
+2018-02-19  Luigi Scarso  <luigi.scarso@gmail.com>
+	* Small cleanup of the code
+	* Bump to version 2.0rc2: the current version is 2.00
+	* Added the envelope primitives to mpman
+
+2017-03-31  Luigi Scarso  <luigi.scarso@gmail.com>
+	* fixed the value header_last to be sure 
+	  to store always the latest  position.
+	* Bump to version 2.0rc1. It's a release candidate for 
+	  testing latest patches and eventually new primitives
+	  (to be discussed at 2017 BachoTeX/TUG meeting).
+	  As the version is always a number, the current version is 2.000
+	  (a way to say 2.0rc1).
+
+2017-02-13  Luigi Scarso  <luigi.scarso@gmail.com>
+	new primitive boundingpath
+
+
+2016-03-06  Luigi Scarso  <luigi.scarso@gmail.com>
+	Bump to version 1.9991.
+
+
+
+2015-12-16  Luigi Scarso  <luigi.scarso@gmail.com>
+	Updated to cairo-1.14.6, gmp-6.1.0 and libpng-1.6.20.
+	Fixed some issues with tfm files.
+
+2015-11-11  Akira Kakuto  <kakuto@fuk.kindai.ac.jp>
+
+	* mp.w: Sync with the upstream.
+
+2015-10-16  Akira Kakuto  <kakuto@fuk.kindai.ac.jp>
+
+	* mpmathbinary.w: Sync with the upstream.
+
+2015-10-15  Akira Kakuto  <kakuto@fuk.kindai.ac.jp>
+
+	* mpmathbinary.w: Sync with the upstream.
+
+2015-10-07  Akira Kakuto  <kakuto@fuk.kindai.ac.jp>
+
+	* mpmath.w, mpmathbinary.w, mpmathdecimal.w, mp.w, mpmathdouble.w:
+	Sync with the upstream trunk.
+
+2015-09-21  Akira Kakuto  <kakuto@fuk.kindai.ac.jp>
+
+	* mpmathdecimal.w: Sync with the upstream trunk.
+
+2015-07-10  Peter Breitenlohner  <peb@mppmu.mpg.de>
+
+	* mptraptest (removed): Renamed ...
+	* mptraptest.test (new):  ... into this.
+	* am/mplib.am: Better dependencies for 'make check'.
+
+
 2015-03-21  Luigi Scarso  <luigi.scarso@gmail.com>
 	make_text for mplib only.
 

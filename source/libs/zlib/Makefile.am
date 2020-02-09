@@ -1,6 +1,8 @@
+## $Id: Makefile.am 43567 2017-03-21 17:43:10Z karl $
 ## Proxy Makefile.am to build zlib for TeX Live.
 ##
-##   Copyright (C) 2009-2015 Peter Breitenlohner <tex-live@tug.org>
+##   Copyright 2016-2017 Karl Berry <tex-live@tug.org>
+##   Copyright 2009-2015 Peter Breitenlohner <tex-live@tug.org>
 ##
 ##   This file is free software; the copyright holder
 ##   gives unlimited permission to copy and/or distribute it,
@@ -12,7 +14,7 @@ EXTRA_DIST = $(ZLIB_TREE)
 
 ## Changes applied to the original source tree
 ##
-EXTRA_DIST += $(ZLIB_TREE)-PATCHES
+EXTRA_DIST += TLpatches
 
 # Files not to be distributed
 include $(srcdir)/../../am/dist_hook.am
@@ -60,6 +62,7 @@ check_PROGRAMS = example minigzip
 dist_check_SCRIPTS = zlib.test
 TESTS = zlib.test
 endif build
+zlib.log: example$(EXEEXT) minigzip$(EXEEXT)
 CLEANFILES = foo.gz foo_gz
 
 LDADD = libz.a

@@ -1,7 +1,9 @@
+## $Id: Makefile.am 49896 2019-02-01 05:51:10Z kakuto $
 ## Proxy Makefile.am to build MPFR for TeX Live.
 ##
-##   Copyright (C) 2014 Taco Hoekwater <taco@metatex.org>
-##   Copyright (C) 2014, 2015 Peter Breitenlohner <tex-live@tug.org>
+##   Copyright 2017 Karl Berry<tex-live@tug.org>
+##   Copyright 2014-2015 Peter Breitenlohner <tex-live@tug.org>
+##   Copyright 2014 Taco Hoekwater <taco@metatex.org>
 ##
 ##   This file is free software; the copyright holder
 ##   gives unlimited permission to copy and/or distribute it,
@@ -13,7 +15,7 @@ EXTRA_DIST = $(MPFR_TREE)
 
 ## Changes applied to the original source tree
 ##
-EXTRA_DIST += $(MPFR_TREE)-PATCHES
+EXTRA_DIST += TLpatches
 
 # Files not to be distributed
 include $(srcdir)/../../am/dist_hook.am
@@ -77,6 +79,7 @@ nodist_libmpfr_a_SOURCES = \
 	@MPFR_TREE@/src/isnum.c \
 	@MPFR_TREE@/src/isqrt.c \
 	@MPFR_TREE@/src/log.c \
+	@MPFR_TREE@/src/min_prec.c \
 	@MPFR_TREE@/src/mpfr-gmp.c \
 	@MPFR_TREE@/src/mpn_exp.c \
 	@MPFR_TREE@/src/mp_clz_tab.c \
@@ -87,6 +90,7 @@ nodist_libmpfr_a_SOURCES = \
 	@MPFR_TREE@/src/mulders.c \
 	@MPFR_TREE@/src/neg.c \
 	@MPFR_TREE@/src/next.c \
+	@MPFR_TREE@/src/pool.c \
 	@MPFR_TREE@/src/powerof2.c \
 	@MPFR_TREE@/src/rem1.c \
 	@MPFR_TREE@/src/rint.c \
@@ -112,6 +116,7 @@ nodist_libmpfr_a_SOURCES = \
 	@MPFR_TREE@/src/sgn.c \
 	@MPFR_TREE@/src/sin.c \
 	@MPFR_TREE@/src/sin_cos.c \
+	@MPFR_TREE@/src/si_op.c \
 	@MPFR_TREE@/src/sqr.c \
 	@MPFR_TREE@/src/sqrt.c \
 	@MPFR_TREE@/src/sqrt_ui.c \
@@ -121,6 +126,7 @@ nodist_libmpfr_a_SOURCES = \
 	@MPFR_TREE@/src/sub1sp.c \
 	@MPFR_TREE@/src/sub_ui.c \
 	@MPFR_TREE@/src/swap.c \
+	@MPFR_TREE@/src/ubf.c \
 	@MPFR_TREE@/src/ui_div.c \
 	@MPFR_TREE@/src/ui_sub.c \
 	@MPFR_TREE@/src/version.c
@@ -133,6 +139,7 @@ unused_sources = \
 	@MPFR_TREE@/src/asinh.c \
 	@MPFR_TREE@/src/atanh.c \
 	@MPFR_TREE@/src/bernoulli.c \
+	@MPFR_TREE@/src/beta.c \
 	@MPFR_TREE@/src/buildopt.c \
 	@MPFR_TREE@/src/cbrt.c \
 	@MPFR_TREE@/src/check.c \
@@ -153,6 +160,7 @@ unused_sources = \
 	@MPFR_TREE@/src/dump.c \
 	@MPFR_TREE@/src/eint.c \
 	@MPFR_TREE@/src/eq.c \
+	@MPFR_TREE@/src/erandom.c \
 	@MPFR_TREE@/src/erf.c \
 	@MPFR_TREE@/src/erfc.c \
 	@MPFR_TREE@/src/exp10.c \
@@ -165,17 +173,22 @@ unused_sources = \
 	@MPFR_TREE@/src/fits_ulong.c \
 	@MPFR_TREE@/src/fits_ushort.c \
 	@MPFR_TREE@/src/fma.c \
+	@MPFR_TREE@/src/fmma.c \
 	@MPFR_TREE@/src/fms.c \
+	@MPFR_TREE@/src/fpif.c \
 	@MPFR_TREE@/src/frac.c \
 	@MPFR_TREE@/src/frexp.c \
 	@MPFR_TREE@/src/gamma.c \
+	@MPFR_TREE@/src/gamma_inc.c \
 	@MPFR_TREE@/src/gammaonethird.c \
 	@MPFR_TREE@/src/get_d64.c \
 	@MPFR_TREE@/src/get_exp.c \
 	@MPFR_TREE@/src/get_f.c \
+	@MPFR_TREE@/src/get_float128.c \
 	@MPFR_TREE@/src/get_flt.c \
 	@MPFR_TREE@/src/get_ld.c \
 	@MPFR_TREE@/src/get_patches.c \
+	@MPFR_TREE@/src/get_q.c \
 	@MPFR_TREE@/src/get_sj.c \
 	@MPFR_TREE@/src/get_ui.c \
 	@MPFR_TREE@/src/get_uj.c \
@@ -195,11 +208,15 @@ unused_sources = \
 	@MPFR_TREE@/src/log1p.c \
 	@MPFR_TREE@/src/log2.c \
 	@MPFR_TREE@/src/logging.c \
+	@MPFR_TREE@/src/log_ui.c \
 	@MPFR_TREE@/src/min_prec.c \
 	@MPFR_TREE@/src/minmax.c \
 	@MPFR_TREE@/src/modf.c \
+	@MPFR_TREE@/src/mpfr-mini-gmp.c \
 	@MPFR_TREE@/src/mul_2exp.c \
 	@MPFR_TREE@/src/mul_d.c \
+	@MPFR_TREE@/src/nrandom.c \
+	@MPFR_TREE@/src/odd_p.c \
 	@MPFR_TREE@/src/out_str.c \
 	@MPFR_TREE@/src/pow.c \
 	@MPFR_TREE@/src/pow_si.c \
@@ -208,14 +225,17 @@ unused_sources = \
 	@MPFR_TREE@/src/print_raw.c \
 	@MPFR_TREE@/src/print_rnd_mode.c \
 	@MPFR_TREE@/src/printf.c \
+	@MPFR_TREE@/src/random_deviate.c \
 	@MPFR_TREE@/src/rec_sqrt.c \
 	@MPFR_TREE@/src/reldiff.c \
+	@MPFR_TREE@/src/rndna.c \
 	@MPFR_TREE@/src/root.c \
 	@MPFR_TREE@/src/sec.c \
 	@MPFR_TREE@/src/sech.c \
 	@MPFR_TREE@/src/set_d64.c \
 	@MPFR_TREE@/src/set_exp.c \
 	@MPFR_TREE@/src/set_flt.c \
+	@MPFR_TREE@/src/set_float128.c \
 	@MPFR_TREE@/src/set_inf.c \
 	@MPFR_TREE@/src/set_ld.c \
 	@MPFR_TREE@/src/set_nan.c \
@@ -226,7 +246,6 @@ unused_sources = \
 	@MPFR_TREE@/src/set_ui.c \
 	@MPFR_TREE@/src/set_uj.c \
 	@MPFR_TREE@/src/setsign.c \
-	@MPFR_TREE@/src/si_op.c \
 	@MPFR_TREE@/src/signbit.c \
 	@MPFR_TREE@/src/sinh.c \
 	@MPFR_TREE@/src/sinh_cosh.c \
@@ -254,6 +273,7 @@ check_PROGRAMS = mpfrtest
 dist_check_SCRIPTS = mpfr.test
 TESTS = mpfr.test
 endif build
+mpfr.log: mpfrtest$(EXEEXT)
 
 mpfrtest_SOURCES = mpfrtest.c
 

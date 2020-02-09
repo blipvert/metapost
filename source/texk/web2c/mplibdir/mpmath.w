@@ -10,6 +10,8 @@
 \font\logos=logosl10
 \def\MF{{\tenlogo META}\-{\tenlogo FONT}}
 \def\MP{{\tenlogo META}\-{\tenlogo POST}}
+\def\pct!{{\char`\%}} % percent sign in ordinary text
+\def\psqrt#1{\sqrt{\mathstrut#1}}
 
 \def\title{Math support functions for 32-bit integer math}
 \pdfoutput=1
@@ -56,6 +58,7 @@ static void mp_number_angle_to_scaled (mp_number *A);
 static void mp_number_fraction_to_scaled (mp_number *A);
 static void mp_number_scaled_to_fraction (mp_number *A);
 static void mp_number_scaled_to_angle (mp_number *A);
+static void mp_m_unif_rand (MP mp, mp_number *ret, mp_number x_orig);
 static void mp_m_norm_rand (MP mp, mp_number *ret);
 static void mp_m_exp (MP mp, mp_number *ret, mp_number x_orig);
 static void mp_m_log (MP mp, mp_number *ret, mp_number x_orig);
@@ -254,6 +257,7 @@ void * mp_initialize_scaled_math (MP mp) {
   math->n_arg = mp_n_arg;
   math->m_log = mp_m_log;
   math->m_exp = mp_m_exp;
+  math->m_unif_rand = mp_m_unif_rand;
   math->m_norm_rand = mp_m_norm_rand;
   math->pyth_add = mp_pyth_add;
   math->pyth_sub = mp_pyth_sub;
@@ -828,9 +832,9 @@ static int mp_round_decimals (MP mp, unsigned char *b, quarterword k) { /* retur
   return (int) halfp (a + 1);
 }
 
-@* Scanning numbers in the input
+@* Scanning numbers in the input.
 
-The definitions below are temporarily here
+The definitions below are temporarily here.
 
 @d set_cur_cmd(A) mp->cur_mod_->type=(A)
 @d set_cur_mod(A) mp->cur_mod_->data.n.data.val=(A)
@@ -957,7 +961,7 @@ void mp_velocity (MP mp, mp_number *ret, mp_number st, mp_number ct, mp_number s
   } else {
     ret->data.val = mp_make_fraction (mp, num, denom);
   }
-/*  printf ("num,denom=%f,%f -=> %f\n", num/65536.0, denom/65536.0, ret.data.val/65536.0);*/
+/*  |printf ("num,denom=%f,%f -=> %f\n", num/65536.0, denom/65536.0, ret.data.val/65536.0);|*/
 }
 
 
@@ -1834,6 +1838,45 @@ static void mp_next_random (MP mp, mp_number *ret) {
     mp->j_random = mp->j_random-1;
   mp_number_clone (ret, mp->randoms[mp->j_random]);
 }
+
+
+@ To produce a uniform random number in the range |0<=u<x| or |0>=u>x|
+or |0=u=x|, given a |scaled| value~|x|, we proceed as shown here.
+
+Note that the call of |take_fraction| will produce the values 0 and~|x|
+with about half the probability that it will produce any other particular
+values between 0 and~|x|, because it rounds its answers.
+
+@c
+static void mp_m_unif_rand (MP mp, mp_number *ret, mp_number x_orig) {
+  mp_number y;     /* trial value */
+  mp_number x, abs_x;
+  mp_number u;
+  new_fraction (y);
+  new_number (x);
+  new_number (abs_x);
+  new_number (u);
+  mp_number_clone (&x, x_orig);
+  mp_number_clone (&abs_x, x);
+  mp_number_abs (&abs_x);
+  mp_next_random(mp, &u);
+  /*|take_fraction (y, abs_x, u);|*/
+  mp_number_take_fraction (mp,&y, abs_x,u);
+  free_number (u);
+  if (mp_number_equal(y, abs_x)) {
+    /*|set_number_to_zero(*ret);|*/
+    mp_number_clone (ret, ((math_data *)mp->math)->zero_t);
+  } else if (mp_number_greater(x, ((math_data *)mp->math)->zero_t)) {
+    mp_number_clone (ret, y);
+  } else {
+    mp_number_clone (ret, y);
+    mp_number_negate (ret);
+  }
+  free_number (abs_x);
+  free_number (x);
+  free_number (y);
+}
+
 
 
 

@@ -10,7 +10,7 @@ dnl
 m4_include([version.ac])[] dnl define mpfr_version
 AC_INIT([mpfr (TeX Live)], mpfr_version, [tex-k@tug.org])
 AC_PREREQ([2.65])
-AC_CONFIG_SRCDIR([mpfr-]mpfr_version[/src/mpfr.h])
+AC_CONFIG_SRCDIR([mpfr-src/src/mpfr.h])
 AC_CONFIG_AUX_DIR([../../build-aux])
 AC_CONFIG_MACRO_DIRS([../../m4 m4])
 
@@ -74,8 +74,8 @@ dnl see http://gmplib.org/list-archives/gmp-bugs/2011-August/002345.html.
 AC_MSG_CHECKING([for recent GMP])
 AC_COMPILE_IFELSE([AC_LANG_SOURCE([[
 #include "gmp.h"
-#if (__GNU_MP_VERSION*100+__GNU_MP_VERSION_MINOR*10 < 410)
-# error "min GMP version is 4.1.0"
+#if (__GNU_MP_VERSION*100+__GNU_MP_VERSION_MINOR*10 < 500)
+# error "min GMP version is 5.0.0"
 error
 #endif
 ]])], [AC_MSG_RESULT([yes])], [
@@ -122,9 +122,9 @@ KPSE_RESTORE_FLAGS
 echo timestamp >config.force
 fi
 
-AC_SUBST([MPFR_TREE], [mpfr-]mpfr_version)
+AC_SUBST([MPFR_TREE], [mpfr-src])
 
-AC_CONFIG_LINKS([mparam.h:mpfr-]mpfr_version[/src/mparam_h.in])
+AC_CONFIG_LINKS([mparam.h:mpfr-src/src/mparam_h.in])
 
 AC_CONFIG_FILES([Makefile include/Makefile])
 

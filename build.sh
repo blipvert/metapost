@@ -126,6 +126,7 @@ then
     --disable-largefile \
     --disable-ptex \
     --enable-mp  \
+    --enable-web2c \
     --enable-compiler-warnings=max \
     --without-system-harfbuzz \
     --without-system-cairo \
@@ -146,6 +147,8 @@ then
     || exit 1 
 fi
 
+
+##    --without-system-zlib no, poopler conflicts
 $MAKE
 (cd libs/zlib; $MAKE )
 (cd libs/libpng; $MAKE )

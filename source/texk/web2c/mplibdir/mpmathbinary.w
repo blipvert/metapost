@@ -4,6 +4,16 @@
 % the MetaPost program is in the public domain.
 % See the <Show version...> code in mpost.w for more info.
 
+% Here is TeX material that gets inserted after \input webmac
+
+\font\tenlogo=logo10 % font used for the METAFONT logo
+\font\logos=logosl10
+\def\MF{{\tenlogo META}\-{\tenlogo FONT}}
+\def\MP{{\tenlogo META}\-{\tenlogo POST}}
+\def\pct!{{\char`\%}} % percent sign in ordinary text
+\def\psqrt#1{\sqrt{\mathstrut#1}}
+
+
 \def\title{Math support functions for MPFR based math}
 \pdfoutput=1
 
@@ -27,7 +37,22 @@
 #define  MPMATHBINARY_H 1
 #include "mplib.h"
 #include "mpmp.h" /* internal header */
+#include <gmp.h>
 #include <mpfr.h>
+
+#ifdef HAVE_CONFIG_H
+#define MP_STR_HELPER(x) #x
+#define MP_STR(x) MP_STR_HELPER(x)
+const char * const COMPILED_gmp_version  = MP_STR(__GNU_MP_VERSION) "." MP_STR( __GNU_MP_VERSION_MINOR) "." MP_STR(__GNU_MP_VERSION_PATCHLEVEL);
+#else
+const char * const COMPILED_gmp_version  = "unknown";
+#endif
+
+const char *COMPILED_MPFR_VERSION_STRING = MPFR_VERSION_STRING;
+int COMPILED__GNU_MP_VERSION = __GNU_MP_VERSION ;
+int COMPILED__GNU_MP_VERSION_MINOR = __GNU_MP_VERSION_MINOR ;
+int COMPILED__GNU_MP_VERSION_PATCHLEVEL = __GNU_MP_VERSION_PATCHLEVEL ;
+
 @<Internal library declarations@>;
 #endif
 
@@ -61,6 +86,7 @@ static void mp_number_angle_to_scaled (mp_number *A);
 static void mp_number_fraction_to_scaled (mp_number *A);
 static void mp_number_scaled_to_fraction (mp_number *A);
 static void mp_number_scaled_to_angle (mp_number *A);
+static void mp_binary_m_unif_rand (MP mp, mp_number *ret, mp_number x_orig);
 static void mp_binary_m_norm_rand (MP mp, mp_number *ret);
 static void mp_binary_m_exp (MP mp, mp_number *ret, mp_number x_orig);
 static void mp_binary_m_log (MP mp, mp_number *ret, mp_number x_orig);
@@ -209,31 +235,37 @@ static mpfr_t fraction_one_plus_mpfr_t;
 static mpfr_t PI_mpfr_t;
 static mpfr_t epsilon_mpfr_t;
 static mpfr_t EL_GORDO_mpfr_t;
+static boolean initialized = false;
+
 
 @ @c
 void init_binary_constants (void) {
-  mpfr_inits2 (precision_bits, one, minusone, zero, two_mpfr_t, three_mpfr_t, four_mpfr_t, fraction_multiplier_mpfr_t,
+  if (!initialized) {
+    mpfr_inits2 (precision_bits, one, minusone, zero, two_mpfr_t, three_mpfr_t, four_mpfr_t, fraction_multiplier_mpfr_t,
               fraction_one_mpfr_t, fraction_one_plus_mpfr_t,  angle_multiplier_mpfr_t, PI_mpfr_t, 
               epsilon_mpfr_t, EL_GORDO_mpfr_t, (mpfr_ptr) 0);
-  mpfr_set_si (one, 1, ROUNDING);
-  mpfr_set_si (minusone, -1, ROUNDING);
-  mpfr_set_si (zero, 0, ROUNDING);
-  mpfr_set_si (two_mpfr_t, two, ROUNDING);
-  mpfr_set_si (three_mpfr_t, three, ROUNDING);
-  mpfr_set_si (four_mpfr_t, four, ROUNDING);
-  mpfr_set_si (fraction_multiplier_mpfr_t, fraction_multiplier, ROUNDING);
-  mpfr_set_si (fraction_one_mpfr_t, fraction_one, ROUNDING);
-  mpfr_set_si (fraction_one_plus_mpfr_t, (fraction_one+1), ROUNDING);
-  mpfr_set_si (angle_multiplier_mpfr_t, angle_multiplier, ROUNDING);
-  mpfr_set_str (PI_mpfr_t, PI_STRING, 10, ROUNDING);
-  mpfr_set_str (epsilon_mpfr_t, epsilon, 10, ROUNDING);
-  mpfr_set_str (EL_GORDO_mpfr_t, EL_GORDO, 10, ROUNDING);
+    mpfr_set_si (one, 1, ROUNDING);
+    mpfr_set_si (minusone, -1, ROUNDING);
+    mpfr_set_si (zero, 0, ROUNDING);
+    mpfr_set_si (two_mpfr_t, two, ROUNDING);
+    mpfr_set_si (three_mpfr_t, three, ROUNDING);
+    mpfr_set_si (four_mpfr_t, four, ROUNDING);
+    mpfr_set_si (fraction_multiplier_mpfr_t, fraction_multiplier, ROUNDING);
+    mpfr_set_si (fraction_one_mpfr_t, fraction_one, ROUNDING);
+    mpfr_set_si (fraction_one_plus_mpfr_t, (fraction_one+1), ROUNDING);
+    mpfr_set_si (angle_multiplier_mpfr_t, angle_multiplier, ROUNDING);
+    mpfr_set_str (PI_mpfr_t, PI_STRING, 10, ROUNDING);
+    mpfr_set_str (epsilon_mpfr_t, epsilon, 10, ROUNDING);
+    mpfr_set_str (EL_GORDO_mpfr_t, EL_GORDO, 10, ROUNDING);
+    initialized = true;
+  }
 }
 void free_binary_constants (void) {
-  mpfr_clears (one, minusone, zero, two_mpfr_t, three_mpfr_t, four_mpfr_t, fraction_multiplier_mpfr_t,
-              fraction_one_mpfr_t, fraction_one_plus_mpfr_t,  angle_multiplier_mpfr_t, PI_mpfr_t, 
-              epsilon_mpfr_t, EL_GORDO_mpfr_t, (mpfr_ptr) 0);
-  mpfr_free_cache ();
+  /* For sake of speed, we accept this memory leak. */
+  /*mpfr_clears (one, minusone, zero, two_mpfr_t, three_mpfr_t, four_mpfr_t, fraction_multiplier_mpfr_t,*/
+  /*            fraction_one_mpfr_t, fraction_one_plus_mpfr_t,  angle_multiplier_mpfr_t, PI_mpfr_t, */
+  /*            epsilon_mpfr_t, EL_GORDO_mpfr_t, (mpfr_ptr) 0); */
+  /*mpfr_free_cache ();*/
 }
 
 @ |precision_max| is limited to 1000, because the precision of already initialized 
@@ -257,7 +289,7 @@ void * mp_initialize_binary_math (MP mp) {
   mpfr_set_d(math->precision_max.data.num, MAX_PRECISION, ROUNDING);
   mp_new_number (mp, &math->precision_min, mp_scaled_type);
   /* really should be |precision_bits_to_digits(MPFR_PREC_MIN)| but that produces a horrible number */
-  mpfr_set_d(math->precision_min.data.num, 1.0 , ROUNDING); 
+  mpfr_set_d(math->precision_min.data.num, 2.0 , ROUNDING); 
   /* here are the constants for |scaled| objects */
   mp_new_number (mp, &math->epsilon_t, mp_scaled_type);
   mpfr_set (math->epsilon_t.data.num, epsilon_mpfr_t, ROUNDING);
@@ -396,6 +428,7 @@ void * mp_initialize_binary_math (MP mp) {
   math->n_arg = mp_binary_n_arg;
   math->m_log = mp_binary_m_log;
   math->m_exp = mp_binary_m_exp;
+  math->m_unif_rand = mp_binary_m_unif_rand;
   math->m_norm_rand = mp_binary_m_norm_rand;
   math->pyth_add = mp_binary_pyth_add;
   math->pyth_sub = mp_binary_pyth_sub;
@@ -578,7 +611,7 @@ void mp_number_scaled_to_angle (mp_number *A) {
 }
 
 
-@* Query functions
+@* Query functions.
 
 @ Convert a number to a scaled value. |decNumberToInt32| is not
 able to make this conversion properly, so instead we are using
@@ -668,7 +701,7 @@ char * mp_binnumber_tostring (mpfr_t n) {
       *(str+strlen(str)-1) = '\0'; /* get rid of trailing zeroes */
     }
     buffer = malloc(strlen(str)+13+numprecdigits+1); 
-    /* the buffer should also fit at least strlen("E+%d", exp) or (numprecdigits-2) worth of zeroes, 
+    /* the buffer should also fit at least strlen("E+\%d", exp) or (numprecdigits-2) worth of zeroes, 
      * because with numprecdigits == 33, the str for "1E32" will be "1", and needing 32 extra zeroes,
      * and the decimal dot. To avoid miscalculations by myself, it is safer to add these
      * three together.
@@ -860,9 +893,9 @@ void mp_binary_number_make_scaled (MP mp, mp_number *ret, mp_number p_orig, mp_n
 @ 
 @d halfp(A) (integer)((unsigned)(A) >> 1)
 
-@* Scanning numbers in the input
+@* Scanning numbers in the input.
 
-The definitions below are temporarily here
+The definitions below are temporarily here.
 
 @d set_cur_cmd(A) mp->cur_mod_->type=(A)
 @d set_cur_mod(A) mpfr_set((mpfr_ptr)(mp->cur_mod_->data.n.data.num),A, ROUNDING)
@@ -870,32 +903,53 @@ The definitions below are temporarily here
 @<Declarations...@>=
 static void mp_wrapup_numeric_token(MP mp, unsigned char *start, unsigned char *stop);
 
-@ Precision check is TODO
-@d too_precise(a) 0
+@ The check of the precision is based on the article "27 Bits are not enough for 8-Digit accuracy" 
+@ by Bennet Goldberg  which roughly says that
+@ given $p$ digits in base 10 and $q$ digits in base 2, 
+@ conversion from base 10 round-trip through base 2 if and only if $10^p < 2^{q-1}$.
+@ In our case  $p/\log_{10}2 + 1 < q$, or $q\geq a$
+@ where $q$ is the current precision in bits and $a=\left\lceil p/\log_{10}2 + 1\right\rceil$. 
+@ Therefore if $a>q$ the required precision could be too high and we emit a warning.
+@d too_precise(a) (a>precision_bits)
 @c
 void mp_wrapup_numeric_token(MP mp, unsigned char *start, unsigned char *stop) {
   int invalid = 0;
   mpfr_t result;
   size_t l = stop-start+1;
+  unsigned long lp, lpbit;
   char *buf = mp_xmalloc(mp, l+1, 1);
+  char *bufp = buf; 
   buf[l] = '\0';
   mpfr_init2(result, precision_bits);
   (void)strncpy(buf,(const char *)start, l);
   invalid = mpfr_set_str(result,buf, 10, ROUNDING);
-  //fprintf(stdout,"scan of [%s] produced %s, ", buf, mp_binnumber_tostring(result));
+  /*|fprintf(stdout,"scan of [%s] produced %s, ", buf, mp_binnumber_tostring(result));|*/
+  lp = (unsigned long) l;
+  /* strip leading - or + or 0 or .*/
+  if ( (*bufp=='-') || (*bufp=='+') || (*bufp=='0') || (*bufp=='.') ) { lp--; bufp++;}
+  /* strip also . */
+  lp = strchr(bufp,'.') ? lp-1: lp;
+  /* strip also trailing 0s */ 
+  bufp = buf+l-1;
+  while(*bufp == '0') {bufp--; lp=( ((lp==0)||(lp==1))?1:lp-1);}
+  /* at least one digit, even if the number is  0 */
+  lp = lp>0? lp: 1;
+  /* bits needed for buf */
+  lpbit = (unsigned long)ceil(lp/log10(2)+1);
   free(buf);
+  bufp = NULL;
   if (invalid == 0) {
     set_cur_mod(result);
-   // fprintf(stdout,"mod=%s\n", mp_binary_number_tostring(mp,mp->cur_mod_->data.n));
-    if (too_precise(l)) {
+   /* |fprintf(stdout,"mod=%s\n", mp_binary_number_tostring(mp,mp->cur_mod_->data.n));|*/
+    if (too_precise(lpbit)) {
        if (mpfr_positive_p((mpfr_ptr)(internal_value (mp_warning_check).data.num)) &&
           (mp->scanner_status != tex_flushing)) {
         char msg[256];
         const char *hlp[] = {"Continue and I'll try to cope",
-               "with that big value; but it might be dangerous.",
+               "with that value; but it might be dangerous.",
                "(Set warningcheck:=0 to suppress this message.)",
                NULL };
-        mp_snprintf (msg, 256, "Number is too large (%s)", mp_binary_number_tostring(mp,mp->cur_mod_->data.n));
+        mp_snprintf (msg, 256, "Required precision is too high (%d vs. numberprecision = %f, required precision=%d bits vs internal precision=%f bits)", (unsigned int)lp,mpfr_get_d(internal_value (mp_number_precision).data.num, ROUNDING),(int)lpbit,precision_bits);
 @.Number is too large@>;
         mp_error (mp, msg, hlp, true);
       }
@@ -1075,6 +1129,24 @@ void mp_ab_vs_cd (MP mp, mp_number *ret, mp_number a_orig, mp_number b_orig, mp_
   mpfr_set(b, (mpfr_ptr )b_orig.data.num, ROUNDING);
   mpfr_set(c, (mpfr_ptr )c_orig.data.num, ROUNDING);
   mpfr_set(d, (mpfr_ptr )d_orig.data.num, ROUNDING);
+  
+  mpfr_mul(q,a,b,ROUNDING);
+  mpfr_mul(r,c,d,ROUNDING);
+  cmp = mpfr_cmp(q,r);
+  if (cmp==0) {
+    mpfr_set(ret->data.num, zero, ROUNDING);
+    goto RETURN;
+  }
+  if (cmp>0) {
+    mpfr_set(ret->data.num, one, ROUNDING);
+    goto RETURN;
+  }
+  if (cmp<0) {
+    mpfr_set(ret->data.num, minusone, ROUNDING);
+    goto RETURN;
+  }
+
+  /*TODO: remove this part of the code until RETURN */
   @<Reduce to the case that |a,c>=0|, |b,d>0|@>;
   while (1) {
     mpfr_div(q,a,d, ROUNDING);
@@ -1500,6 +1572,82 @@ void mp_binary_sin_cos (MP mp, mp_number z_orig, mp_number *n_cos, mp_number *n_
   mpfr_clear (one_eighty);
 }
 
+@ This is the http://www-cs-faculty.stanford.edu/~uno/programs/rng.c
+with  small cosmetic modifications.
+
+@c
+#define KK 100                     /* the long lag  */
+#define LL  37                     /* the short lag */
+#define MM (1L<<30)                /* the modulus   */
+#define mod_diff(x,y) (((x)-(y))&(MM-1)) /* subtraction mod MM */
+/* */ 
+static long ran_x[KK];                    /* the generator state */
+/* */ 
+static void ran_array(long aa[],int n) /* put n new random numbers in aa */
+  /* long aa[]    destination */
+  /* int n       array length (must be at least KK) */
+{
+  register int i,j;
+  for (j=0;j<KK;j++) aa[j]=ran_x[j];
+  for (;j<n;j++) aa[j]=mod_diff(aa[j-KK],aa[j-LL]);
+  for (i=0;i<LL;i++,j++) ran_x[i]=mod_diff(aa[j-KK],aa[j-LL]);
+  for (;i<KK;i++,j++) ran_x[i]=mod_diff(aa[j-KK],ran_x[i-LL]);
+}
+/* */ 
+/* the following routines are from exercise 3.6--15 */
+/* after calling |ran_start|, get new randoms by, e.g., |x=ran_arr_next()| */
+/* */ 
+#define QUALITY 1009 /* recommended quality level for high-res use */
+static long ran_arr_buf[QUALITY];
+static long ran_arr_dummy=-1, ran_arr_started=-1;
+static long *ran_arr_ptr=&ran_arr_dummy; /* the next random number, or -1 */
+/* */ 
+#define TT  70   /* guaranteed separation between streams */
+#define is_odd(x)  ((x)&1)          /* units bit of x */
+/* */ 
+static void ran_start(long seed) /* do this before using |ran_array| */
+  /* long seed             selector for different streams */
+{
+  register int t,j;
+  long x[KK+KK-1];              /* the preparation buffer */
+  register long ss=(seed+2)&(MM-2);
+  for (j=0;j<KK;j++) {
+    x[j]=ss;                      /* bootstrap the buffer */
+    ss<<=1; if (ss>=MM) ss-=MM-2; /* cyclic shift 29 bits */
+  }
+  x[1]++;              /* make x[1] (and only x[1]) odd */
+  for (ss=seed&(MM-1),t=TT-1; t; ) {       
+    for (j=KK-1;j>0;j--) x[j+j]=x[j], x[j+j-1]=0; /* "square" */
+    for (j=KK+KK-2;j>=KK;j--)
+      x[j-(KK-LL)]=mod_diff(x[j-(KK-LL)],x[j]),
+      x[j-KK]=mod_diff(x[j-KK],x[j]);
+    if (is_odd(ss)) {              /* "multiply by z" */
+      for (j=KK;j>0;j--)  x[j]=x[j-1];
+      x[0]=x[KK];            /* shift the buffer cyclically */
+      x[LL]=mod_diff(x[LL],x[KK]);
+    }
+    if (ss) ss>>=1; else t--;
+  }
+  for (j=0;j<LL;j++) ran_x[j+KK-LL]=x[j];
+  for (;j<KK;j++) ran_x[j-LL]=x[j];
+  for (j=0;j<10;j++) ran_array(x,KK+KK-1); /* warm things up */
+  ran_arr_ptr=&ran_arr_started;
+}
+/* */ 
+#define ran_arr_next() (*ran_arr_ptr>=0? *ran_arr_ptr++: ran_arr_cycle())
+static long ran_arr_cycle(void)
+{
+  if (ran_arr_ptr==&ran_arr_dummy)
+    ran_start(314159L); /* the user forgot to initialize */
+  ran_array(ran_arr_buf,QUALITY);
+  ran_arr_buf[KK]=-1;
+  ran_arr_ptr=ran_arr_buf+1;
+  return ran_arr_buf[0];
+}
+
+
+
+
 @ To initialize the |randoms| table, we call the following routine.
 
 @c
@@ -1522,11 +1670,30 @@ void mp_init_randoms (MP mp, int seed) {
   mp_new_randoms (mp);
   mp_new_randoms (mp);
   mp_new_randoms (mp);          /* ``warm up'' the array */
+  
+  ran_start ((unsigned long)seed);  
+
 }
 
 @ @c
 void mp_binary_number_modulo (mp_number *a, mp_number b) {
    mpfr_remainder (a->data.num, a->data.num, b.data.num, ROUNDING);
+}
+
+@ To consume a random  integer for the uniform generator, the program below will say `|next_unif_random|'.
+
+@c 
+static void mp_next_unif_random (MP mp, mp_number *ret) { 
+  mp_number rop;
+  unsigned long int op;
+  float flt_op ;  
+  (void)mp;
+  mp_new_number (mp, &rop, mp_scaled_type);
+  op = (unsigned)ran_arr_next();
+  flt_op = op/(MM*1.0);
+  mpfr_set_d ((mpfr_ptr)(rop.data.num), flt_op,ROUNDING);
+  mp_number_clone (ret, rop);
+  free_number (rop);
 }
 
 
@@ -1541,6 +1708,51 @@ static void mp_next_random (MP mp, mp_number *ret) {
     mp->j_random = mp->j_random-1;
   mp_number_clone (ret, mp->randoms[mp->j_random]);
 }
+
+@ To produce a uniform random number in the range |0<=u<x| or |0>=u>x|
+or |0=u=x|, given a |scaled| value~|x|, we proceed as shown here.
+
+Note that the call of |take_fraction| will produce the values 0 and~|x|
+with about half the probability that it will produce any other particular
+values between 0 and~|x|, because it rounds its answers.
+
+@c
+static void mp_binary_m_unif_rand (MP mp, mp_number *ret, mp_number x_orig) {
+  mp_number y;     /* trial value */
+  mp_number x, abs_x;
+  mp_number u;
+  char *r ;mpfr_exp_t e;
+  new_fraction (y);
+  new_number (x);
+  new_number (abs_x);
+  new_number (u);
+  mp_number_clone (&x, x_orig);      
+  mp_number_clone (&abs_x, x);
+  mp_binary_abs (&abs_x);
+  mp_next_unif_random(mp, &u);
+  mpfr_mul (y.data.num, abs_x.data.num, u.data.num, ROUNDING);
+  free_number (u);
+  if (mp_number_equal(y, abs_x)) {
+    mp_number_clone (ret, ((math_data *)mp->math)->zero_t);
+  } else if (mp_number_greater(x, ((math_data *)mp->math)->zero_t)) {
+    mp_number_clone (ret, y);
+  } else {
+    mp_number_clone (ret, y);
+    mp_number_negate (ret);
+  }
+  r = mpfr_get_str(NULL,    /* |char *str|,         */     
+                  &e,       /* |mpfr_exp_t *expptr|,*/
+                  10,       /* |int b|,             */
+                  0,        /* |size_t n|,          */
+                  ret->data.num, /* |mpfr_t op|,    */      
+                  ROUNDING       /* |mpfr_rnd_t rnd|*/
+                  );
+  mpfr_free_str(r);
+  free_number (abs_x);
+  free_number (x);
+  free_number (y);
+}
+
 
 
 @ Finally, a normal deviate with mean zero and unit standard deviation
@@ -1578,7 +1790,6 @@ static void mp_binary_m_norm_rand (MP mp, mp_number *ret) {
     mp_binary_m_log (mp,&la, u);
     mp_set_binary_from_substraction(&la, ((math_data *)mp->math)->twelve_ln_2_k, la);
     mp_binary_ab_vs_cd (mp,&ab_vs_cd, ((math_data *)mp->math)->one_k, la, xa, xa);
-    /*mp_ab_vs_cd (mp,&ab_vs_cd, ((math_data *)mp->math)->one_k, la, xa, xa);*/
   } while (mp_number_less(ab_vs_cd,((math_data *)mp->math)->zero_t));
   mp_number_clone (ret, xa);
   free_number (ab_vs_cd);
@@ -1591,7 +1802,7 @@ static void mp_binary_m_norm_rand (MP mp, mp_number *ret) {
 
 
 
-@ The following subroutine is used only in norm_rand and tests  if $ab$ is
+@ The following subroutine is used only in |norm_rand| and tests  if $ab$ is
 greater than, equal to, or less than~$cd$.
 The result is $+1$, 0, or~$-1$ in the three respective cases.
 

@@ -10,6 +10,9 @@
 \font\logos=logosl10
 \def\MF{{\tenlogo META}\-{\tenlogo FONT}}
 \def\MP{{\tenlogo META}\-{\tenlogo POST}}
+\def\pct!{{\char`\%}} % percent sign in ordinary text
+\def\psqrt#1{\sqrt{\mathstrut#1}}
+
 
 \def\title{Math support functions for IEEE double based math}
 \pdfoutput=1
@@ -64,6 +67,7 @@ static void mp_number_angle_to_scaled (mp_number *A);
 static void mp_number_fraction_to_scaled (mp_number *A);
 static void mp_number_scaled_to_fraction (mp_number *A);
 static void mp_number_scaled_to_angle (mp_number *A);
+static void mp_double_m_unif_rand (MP mp, mp_number *ret, mp_number x_orig);
 static void mp_double_m_norm_rand (MP mp, mp_number *ret);
 static void mp_double_m_exp (MP mp, mp_number *ret, mp_number x_orig);
 static void mp_double_m_log (MP mp, mp_number *ret, mp_number x_orig);
@@ -262,6 +266,7 @@ void * mp_initialize_double_math (MP mp) {
   math->n_arg = mp_double_n_arg;
   math->m_log = mp_double_m_log;
   math->m_exp = mp_double_m_exp;
+  math->m_unif_rand = mp_double_m_unif_rand;
   math->m_norm_rand = mp_double_m_norm_rand;
   math->pyth_add = mp_double_pyth_add;
   math->pyth_sub = mp_double_pyth_sub;
@@ -643,7 +648,7 @@ double mp_double_make_scaled (MP mp, double p, double q);
 @ 
 @d halfp(A) (integer)((unsigned)(A) >> 1)
 
-@* Scanning numbers in the input
+@* Scanning numbers in the input.
 
 The definitions below are temporarily here
 
@@ -812,6 +817,11 @@ void mp_ab_vs_cd (MP mp, mp_number *ret, mp_number a_orig, mp_number b_orig, mp_
   integer q, r; /* temporary registers */
   integer a, b, c, d;
   (void)mp;
+  
+  mp_double_ab_vs_cd(mp,ret, a_orig, b_orig, c_orig, d_orig);
+  if (1>0) 
+    return ;
+  /* TODO: remove this code until the end */
   a = a_orig.data.dval;
   b = b_orig.data.dval;
   c = c_orig.data.dval;
@@ -1206,14 +1216,101 @@ any loss of accuracy. Then |x| and~|y| are divided by~|r|.
 @c
 void mp_double_sin_cos (MP mp, mp_number z_orig, mp_number *n_cos, mp_number *n_sin) {
   double rad;
-  rad = (z_orig.data.dval / angle_multiplier) * PI/180.0;
-  n_cos->data.dval = cos(rad) * fraction_multiplier;
-  n_sin->data.dval = sin(rad) * fraction_multiplier;
+  rad = (z_orig.data.dval / angle_multiplier); /* still degrees */
+  if ((rad == 90.0)||(rad == -270)){
+    n_cos->data.dval = 0.0;
+    n_sin->data.dval = fraction_multiplier;
+  } else if ((rad == -90.0)||(rad == 270.0)) {
+    n_cos->data.dval = 0.0;
+    n_sin->data.dval = -fraction_multiplier;
+  } else if ((rad == 180.0) || (rad == -180.0)) {
+    n_cos->data.dval = -fraction_multiplier;
+    n_sin->data.dval = 0.0;
+  } else {
+    rad = rad * PI/180.0;
+    n_cos->data.dval = cos(rad) * fraction_multiplier;
+    n_sin->data.dval = sin(rad) * fraction_multiplier;
+  }
 #if DEBUG
   fprintf(stdout, "\nsin_cos(%f,%f,%f)", mp_number_to_double(z_orig),
 mp_number_to_double(*n_cos), mp_number_to_double(*n_sin));
 #endif
 }
+
+@ This is the http://www-cs-faculty.stanford.edu/~uno/programs/rng.c
+with  small cosmetic modifications.
+
+@c
+#define KK 100                     /* the long lag  */
+#define LL  37                     /* the short lag */
+#define MM (1L<<30)                /* the modulus   */
+#define mod_diff(x,y) (((x)-(y))&(MM-1)) /* subtraction mod MM */
+/* */ 
+static long ran_x[KK];                    /* the generator state */
+/* */ 
+static void ran_array(long aa[],int n) /* put n new random numbers in aa */
+  /* long aa[]    destination */
+  /* int n       array length (must be at least KK) */
+{
+  register int i,j;
+  for (j=0;j<KK;j++) aa[j]=ran_x[j];
+  for (;j<n;j++) aa[j]=mod_diff(aa[j-KK],aa[j-LL]);
+  for (i=0;i<LL;i++,j++) ran_x[i]=mod_diff(aa[j-KK],aa[j-LL]);
+  for (;i<KK;i++,j++) ran_x[i]=mod_diff(aa[j-KK],ran_x[i-LL]);
+}
+/* */ 
+/* the following routines are from exercise 3.6--15 */
+/* after calling |ran_start|, get new randoms by, e.g., |x=ran_arr_next()| */
+/* */ 
+#define QUALITY 1009 /* recommended quality level for high-res use */
+static long ran_arr_buf[QUALITY];
+static long ran_arr_dummy=-1, ran_arr_started=-1;
+static long *ran_arr_ptr=&ran_arr_dummy; /* the next random number, or -1 */
+/* */ 
+#define TT  70   /* guaranteed separation between streams */
+#define is_odd(x)  ((x)&1)          /* units bit of x */
+/* */ 
+static void ran_start(long seed) /* do this before using |ran_array| */
+  /* long seed             selector for different streams */
+{
+  register int t,j;
+  long x[KK+KK-1];              /* the preparation buffer */
+  register long ss=(seed+2)&(MM-2);
+  for (j=0;j<KK;j++) {
+    x[j]=ss;                      /* bootstrap the buffer */
+    ss<<=1; if (ss>=MM) ss-=MM-2; /* cyclic shift 29 bits */
+  }
+  x[1]++;              /* make x[1] (and only x[1]) odd */
+  for (ss=seed&(MM-1),t=TT-1; t; ) {       
+    for (j=KK-1;j>0;j--) x[j+j]=x[j], x[j+j-1]=0; /* "square" */
+    for (j=KK+KK-2;j>=KK;j--)
+      x[j-(KK-LL)]=mod_diff(x[j-(KK-LL)],x[j]),
+      x[j-KK]=mod_diff(x[j-KK],x[j]);
+    if (is_odd(ss)) {              /* "multiply by z" */
+      for (j=KK;j>0;j--)  x[j]=x[j-1];
+      x[0]=x[KK];            /* shift the buffer cyclically */
+      x[LL]=mod_diff(x[LL],x[KK]);
+    }
+    if (ss) ss>>=1; else t--;
+  }
+  for (j=0;j<LL;j++) ran_x[j+KK-LL]=x[j];
+  for (;j<KK;j++) ran_x[j-LL]=x[j];
+  for (j=0;j<10;j++) ran_array(x,KK+KK-1); /* warm things up */
+  ran_arr_ptr=&ran_arr_started;
+}
+/* */ 
+#define ran_arr_next() (*ran_arr_ptr>=0? *ran_arr_ptr++: ran_arr_cycle())
+static long ran_arr_cycle(void)
+{
+  if (ran_arr_ptr==&ran_arr_dummy)
+    ran_start(314159L); /* the user forgot to initialize */
+  ran_array(ran_arr_buf,QUALITY);
+  ran_arr_buf[KK]=-1;
+  ran_arr_ptr=ran_arr_buf+1;
+  return ran_arr_buf[0];
+}
+
+
 
 @ To initialize the |randoms| table, we call the following routine.
 
@@ -1237,6 +1334,10 @@ void mp_init_randoms (MP mp, int seed) {
   mp_new_randoms (mp);
   mp_new_randoms (mp);
   mp_new_randoms (mp);          /* ``warm up'' the array */
+
+  ran_start((unsigned long) seed);  
+
+
 }
 
 @ @c
@@ -1255,6 +1356,18 @@ void mp_number_modulo (mp_number *a, mp_number b) {
 
 
 
+@ To consume a random  integer for the uniform generator, the program below will say `|next_unif_random|'.
+
+@c 
+static void mp_next_unif_random (MP mp, mp_number *ret) { 
+  double a; 
+  unsigned long int op;
+  (void)mp;
+  op = (unsigned)ran_arr_next(); 
+  a = op/(MM*1.0);
+  ret->data.dval = a;
+}
+
 
 
 @ To consume a random fraction, the program below will say `|next_random|'.
@@ -1267,6 +1380,43 @@ static void mp_next_random (MP mp, mp_number *ret) {
     mp->j_random = mp->j_random-1;
   mp_number_clone (ret, mp->randoms[mp->j_random]);
 }
+
+
+@ To produce a uniform random number in the range |0<=u<x| or |0>=u>x|
+or |0=u=x|, given a |scaled| value~|x|, we proceed as shown here.
+
+Note that the call of |take_fraction| will produce the values 0 and~|x|
+with about half the probability that it will produce any other particular
+values between 0 and~|x|, because it rounds its answers.
+
+@c
+static void mp_double_m_unif_rand (MP mp, mp_number *ret, mp_number x_orig) {
+  mp_number y;     /* trial value */
+  mp_number x, abs_x;
+  mp_number u;
+  new_fraction (y);
+  new_number (x);
+  new_number (abs_x);
+  new_number (u);
+  mp_number_clone (&x, x_orig);
+  mp_number_clone (&abs_x, x);
+  mp_double_abs (&abs_x);
+  mp_next_unif_random(mp, &u);
+  y.data.dval = abs_x.data.dval * u.data.dval;
+  free_number (u);
+  if (mp_number_equal(y, abs_x)) {
+    mp_number_clone (ret, ((math_data *)mp->math)->zero_t);
+  } else if (mp_number_greater(x, ((math_data *)mp->math)->zero_t)) {
+    mp_number_clone (ret, y);
+  } else {
+    mp_number_clone (ret, y);
+    mp_number_negate (ret);
+  }
+  free_number (abs_x);
+  free_number (x);
+  free_number (y);
+}
+
 
 
 @ Finally, a normal deviate with mean zero and unit standard deviation
@@ -1317,7 +1467,7 @@ static void mp_double_m_norm_rand (MP mp, mp_number *ret) {
 
 
 
-@ The following subroutine is used only in norm_rand and tests  if $ab$ is
+@ The following subroutine is used only in |norm_rand| and tests  if $ab$ is
 greater than, equal to, or less than~$cd$.
 The result is $+1$, 0, or~$-1$ in the three respective cases.
 

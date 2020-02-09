@@ -1,10 +1,9 @@
-.TH BIBTEX 1 "1 February 2010" "bibtex 0.99d" "Web2C @VERSION@"
+.TH BIBTEX 1 "23 February 2018" "bibtex 0.99d" "Web2C @VERSION@"
 .\"=====================================================================
 .if t .ds TX \fRT\\h'-0.1667m'\\v'0.20v'E\\v'-0.20v'\\h'-0.125m'X\fP
 .if n .ds TX TeX
-.ie t .ds OX \fIT\v'+0.25m'E\v'-0.25m'X\fP for troff
-.el .ds OX TeX for nroff
-.\" the same but obliqued
+.ie t .ds OX \fIT\v'+0.25m'E\v'-0.25m'X\fP
+.el .ds OX TeX
 .\" BX definition must follow TX so BX can use TX
 .if t .ds BX \fRB\s-2IB\s0\fP\*(TX
 .if n .ds BX BibTeX
@@ -64,8 +63,20 @@ The
 .B \-min-crossrefs
 option defines the minimum number of
 .B crossref
-required for automatic inclusion of the crossref'd entry on the citation
+required for automatic inclusion of the crossref base entry in the citation
 list; the default is two. 
+To avoid these automatic inclusions altogether, give this option
+a sufficiently large number, and be sure to remove any
+previous
+.B .aux 
+and
+.B .bbl
+files.  Otherwise the option may
+appear to have no effect, since \*(BX will have added the citation
+for the base entry to the
+.B .aux
+file, and nothing will remove it.
+.PP
 With the
 .B \-terse
 option, \*(BX operates silently.  Without it, a banner and progress

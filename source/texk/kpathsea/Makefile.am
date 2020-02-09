@@ -1,8 +1,10 @@
+## $Id: Makefile.am 47973 2018-06-10 06:12:41Z takuji $
 ## Makefile.am for the TeX Live subdirectory texk/kpathsea/
 ##
-## Copyright (C) 2009-2015 Peter Breitenlohner <tex-live@tug.org>
+## Copyright 2017 Karl Berry <tex-live@tug.org>
+## Copyright 2009-2015 Peter Breitenlohner <tex-live@tug.org>
 ## You may freely use, modify and/or distribute this file.
-##
+
 SUBDIRS = . doc man
 
 EXTRA_DIST = PROJECTS
@@ -111,15 +113,11 @@ EXTRA_DIST += \
 kpseincludedir = ${includedir}/kpathsea
 
 nodist_kpseinclude_HEADERS = \
+	c-auto.h \
 	kpathsea.h \
 	paths.h
 
 kpseinclude_HEADERS = config.h $(direct_headers) $(indirect_headers)
-
-kpselibdir = ${libdir}/kpathsea
-
-nodist_kpselib_HEADERS = \
-	c-auto.h
 
 # Headers included directly into kpathsea.h
 #
@@ -285,14 +283,14 @@ uninstall-local:
 if !WIN32
 	@for f in $(dist_noinst_SCRIPTS); do \
 	  if grep "original $$f --" "$(DESTDIR)$(bindir)/$$f" >/dev/null 2>&1; then \
-	    echo " rm -f '$(DESTDIR)$(bindir)/$$f'"; \
+	    echo " rm -f '$(DESTDIR)$(bindir)/$$f'"; \
 	    rm -f "$(DESTDIR)$(bindir)/$$f"; \
 	  else :; fi; \
 	done
 endif !WIN32
 	@for f in $(dist_noinst_DATA); do \
 	  if grep "original $$f --" "$(DESTDIR)$(web2cdir)/$$f" >/dev/null 2>&1; then \
-	    echo " rm -f '$(DESTDIR)$(web2cdir)/$$f'"; \
+	    echo " rm -f '$(DESTDIR)$(web2cdir)/$$f'"; \
 	    rm -f "$(DESTDIR)$(web2cdir)/$$f"; \
 	  else :; fi; \
 	done
@@ -305,10 +303,18 @@ install-exec-hook: install-bin-links
 
 uninstall-hook: uninstall-bin-links
 
-## The tests
+## Tests
+AM_TESTS_ENVIRONMENT  = LN_S='$(LN_S)'; export LN_S;
+AM_TESTS_ENVIRONMENT += LT_OBJDIR='$(LT_OBJDIR)'; export LT_OBJDIR;
+#
 TESTS  = tests/cnfnewline.test tests/kpseaccess.test
 TESTS += tests/kpsereadlink.test tests/kpsestat.test tests/kpsewhich.test
-TESTS_ENVIRONMENT = LN_S='$(LN_S)' LT_OBJDIR='$(LT_OBJDIR)'
+#
+tests/cnfnewline.log tests/kpsewhich.log: kpsewhich$(EXEEXT)
+tests/kpseaccess.log: kpseaccess$(EXEEXT)
+tests/kpsereadlink.log: kpsereadlink$(EXEEXT)
+tests/kpsestat.log: kpsestat$(EXEEXT)
+#
 EXTRA_DIST += $(TESTS)
 EXTRA_DIST += tests/cnfnewline/texmf.cnf
 
@@ -320,6 +326,4 @@ CLEANFILES =
 include $(srcdir)/../../am/rebuild.am
 
 ## Not used
-##
 EXTRA_DIST += mktex.cnf
-

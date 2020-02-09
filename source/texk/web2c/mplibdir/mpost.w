@@ -4,18 +4,35 @@
 
 \font\tenlogo=logo10 % font used for the METAFONT logo
 \def\MP{{\tenlogo META}\-{\tenlogo POST}}
+\def\MF{{\tenlogo META}\-{\tenlogo FONT}}
+\def\MP{{\tenlogo META}\-{\tenlogo POST}}
+\def\pct!{{\char`\%}} % percent sign in ordinary text
+\def\psqrt#1{\sqrt{\mathstrut#1}}
+
 
 \def\title{MetaPost executable}
 \def\[#1]{#1.}
 \pdfoutput=1
+
+@s line normal
+
+@s MP int
+@s MPX int
+@s MP_options int
+@s boolean int
+@s const_string int
+@s mpx_options int
+@s option int
+@s string int
+@s timeb int
+@s timeval int
 
 @*\MP\ executable.
 
 Now that all of \MP\ is a library, a separate program is needed to 
 have our customary command-line interface. 
 
-@ First, here are the C includes. |avl.h| is needed because of an 
-|avl_allocator| that is defined in |mplib.h|
+@ First, here are the \CEE/ includes.
 
 @d true 1
 @d false 0
@@ -30,7 +47,7 @@ have our customary command-line interface.
 #elif defined (HAVE_SYS_TIMEB_H)
 #include <sys/timeb.h>
 #endif
-#include <time.h> /* For `struct tm'.  Moved here for Visual Studio 2005.  */
+#include <time.h> /* For `|struct tm|'.  Moved here for Visual Studio 2005.  */
 #if HAVE_SYS_STAT_H
 #include <sys/stat.h>
 #endif
@@ -38,7 +55,7 @@ have our customary command-line interface.
 #include <mpxout.h>
 #include <kpathsea/kpathsea.h>
 @= /*@@null@@*/ @> static char *mpost_tex_program = NULL;
-static int debug = 0; /* debugging for makempx */
+static int debug = 0; /* debugging for \.{makempx} */
 static int nokpse = 0;
 static boolean recorder_enabled = false;
 static string recorder_name = NULL;
@@ -47,8 +64,11 @@ static char *job_name = NULL;
 static char *job_area = NULL;
 static int dvitomp_only = 0;
 static int ini_version_test = false;
-@<getopt structures@>;
-@<Declarations@>;
+string output_directory;     /* Defaults to |NULL|.  */
+static boolean restricted_mode = false;
+
+@<Structures for |getopt|@>@;
+@<Declarations@>@;
 
 @ Allocating a bit of memory, with error detection:
 
@@ -109,6 +129,9 @@ static void mpost_run_editor (MP mp, char *fname, int fline) {
   int dontchange = 0;
 #endif
 
+  if (restricted_mode)
+    return;
+
   sdone = ddone = false;
   edit_value = kpse_var_value ("MPEDIT");
   if (edit_value == NULL)
@@ -164,7 +187,7 @@ static void mpost_run_editor (MP mp, char *fname, int fline) {
             break;
 	  case '\0':
             *temp++ = '%';
-            /* Back up to the null to force termination.  */
+            /* Back up to the |NULL| to force termination.  */
 	    edit_value--;
 	    break;
 	  default:
@@ -232,7 +255,7 @@ options->run_editor = mpost_run_editor;
 static string normalize_quotes (const char *name, const char *mesg) {
     boolean quoted = false;
     boolean must_quote = (strchr(name, ' ') != NULL);
-    /* Leave room for quotes and NUL. */
+    /* Leave room for quotes and |NULL|. */
     string ret = (string)mpost_xmalloc(strlen(name)+3);
     string p;
     const_string q;
@@ -315,8 +338,8 @@ void recorder_start(char *jobname) {
   return  kpse_find_file (nam, fmt, req);
 }
 
-@ Invoke {\tt makempx} (or {\tt troffmpx}) to make sure there is an
-   up-to-date {\tt .mpx} file for a given {\tt .mp} file.  (Original
+@ Invoke \.{makempx} (or \.{troffmpx}) to make sure there is an
+   up-to-date \.{.mpx} file for a given \.{.mp} file.  (Original
    from John Hobby 3/14/90)
 
 @d default_args " --parse-first-line --interaction=nonstopmode"
@@ -330,6 +353,10 @@ void recorder_start(char *jobname) {
 static int mpost_run_make_mpx (MP mp, char *mpname, char *mpxname) {
   int ret;
   char *cnf_cmd = kpse_var_value ("MPXCOMMAND");
+  if (restricted_mode) {
+    /* In the restricted mode, just return success */
+    return 0;
+  }
   if (cnf_cmd != NULL && (strcmp (cnf_cmd, "0")==0)) {
     /* If they turned off this feature, just return success.  */
     ret = 0;
@@ -538,15 +565,49 @@ static int get_random_seed (void) {
 @ @<Register the callback routines@>=
 options->random_seed = get_random_seed();
 
+
+@ Handle -output-directory.
+
+@c
+static char *mpost_find_in_output_directory(const char *s,const char *fmode)
+{
+    if (output_directory && !kpse_absolute_p(s, false)) {
+        char *ftemp = concat3(output_directory, DIR_SEP_STRING, s);
+        return ftemp;
+    }
+    return NULL;
+}
+
+
+
 @ @c 
 static char *mpost_find_file(MP mp, const char *fname, const char *fmode, int ftype)  {
   size_t l ;
   char *s;
+  char *ofname; 
   (void)mp;
   s = NULL;
-  if (fname == NULL || (fmode[0]=='r' &&  !kpse_in_name_ok(fname)) ||
-      (fmode[0]=='w' &&  !kpse_out_name_ok(fname)))
+  ofname = NULL ;
+
+
+  if (fname == NULL || (fmode[0]=='r' &&  !kpse_in_name_ok(fname)) )
     return NULL;  /* disallowed filename */
+
+
+  if  (fmode[0]=='w') {
+      if (output_directory) { 
+        ofname = mpost_find_in_output_directory(fname,fmode);
+	if  (ofname == NULL || (fmode[0]=='w' &&  !kpse_out_name_ok(ofname))) {
+	  mpost_xfree(ofname);
+	  return NULL;  /* disallowed filename */
+	}
+      } else {
+	if (!kpse_out_name_ok(fname))
+	  return NULL;  /* disallowed filename */
+      }
+  }  
+
+
   if (fmode[0]=='r') {
 	if ((job_area != NULL) &&
         (ftype>=mp_filetype_text || ftype==mp_filetype_program )) {
@@ -564,7 +625,6 @@ static char *mpost_find_file(MP mp, const char *fname, const char *fmode, int ft
           struct stat source_stat, target_stat;
           char *mpname = mpost_xstrdup(f);
           *(mpname + strlen(mpname) -1 ) = '\0';
-          /* printf("statting %s and %s\n", mpname, f); */
           if ((stat(f, &target_stat) >= 0) &&
               (stat(mpname, &source_stat) >= 0)) {
 #if HAVE_ST_MTIM
@@ -618,8 +678,14 @@ static char *mpost_find_file(MP mp, const char *fname, const char *fmode, int ft
       }
     }
   } else {
-    if (fname!=NULL)
-      s = mpost_xstrdup(fname); /* when writing */
+    /* when writing */
+    if (ofname) {
+       s = mpost_xstrdup(ofname); 
+       mpost_xfree(ofname);
+    } else {
+      s = mpost_xstrdup(fname); 
+    }
+
   }
   return s;
 }
@@ -629,7 +695,7 @@ if (!nokpse)
   options->find_file = mpost_find_file;
 
 @ The |mpost| program supports setting of internal values
-via a |-s| commandline switch. Since this switch is repeatable,
+via a \.{-s} commandline switch. Since this switch is repeatable,
 a structure is needed to store the found values in, which is a
 simple linked list. 
 
@@ -641,7 +707,7 @@ typedef struct set_list_item {
    struct set_list_item *next;
 } set_list_item ;
 
-@ Here is the global value that is the head of the list of |-s| options.
+@ Here is the global value that is the head of the list of \.{-s} options.
 @c
 struct set_list_item *set_list = NULL;
 
@@ -715,6 +781,7 @@ void run_set_list (MP mp) {
 }
    
 
+
 @ @c 
 static void *mpost_open_file(MP mp, const char *fname, const char *fmode, int ftype)  {
   char realmode[3];
@@ -750,9 +817,8 @@ static void *mpost_open_file(MP mp, const char *fname, const char *fmode, int ft
 if (!nokpse)
   options->open_file = mpost_open_file;
 
-@  
-@<getopt structures@>=
-#define ARGUMENT_IS(a) STREQ (mpost_options[optionid].name, a)
+@ @d ARGUMENT_IS(a) STREQ (mpost_options[optionid].name, a)
+@<Structures for |getopt|@>=
 
 /* SunOS cc can't initialize automatic structs, so make this static.  */
 static struct option mpost_options[]
@@ -770,6 +836,7 @@ static struct option mpost_options[]
       { "progname",                  1, 0, 0 },
       { "version",                   0, 0, 0 },
       { "recorder",                  0, &recorder_enabled, 1 },
+      { "restricted",                0, 0, 0 },
       { "file-line-error-style",     0, 0, 0 },
       { "no-file-line-error-style",  0, 0, 0 },
       { "file-line-error",           0, 0, 0 },
@@ -791,7 +858,7 @@ static struct option mpost_options[]
 
 @<Read and set command line options@>=
 {
-  int g;   /* `getopt' return code.  */
+  int g;   /* `|getopt|' return code.  */
   int optionid;
   for (;;) {
     g = getopt_long_only (argc, argv, "+", mpost_options, &optionid);
@@ -851,11 +918,15 @@ static struct option mpost_options[]
       } else {
         fprintf(stdout,"Ignoring unknown argument `%s' to --numbersystem\n", optarg);
       }
+    } else if (ARGUMENT_IS ("restricted")) {
+      restricted_mode = true;
+      mpost_tex_program = NULL;
     } else if (ARGUMENT_IS("troff") || 
                ARGUMENT_IS("T")) {
       options->troff_mode = (int)true;
     } else if (ARGUMENT_IS ("tex")) {
-      mpost_tex_program = optarg;
+      if (!restricted_mode)
+        mpost_tex_program = optarg;
     } else if (ARGUMENT_IS("file-line-error") || 
                ARGUMENT_IS("file-line-error-style")) {
       options->file_line_error_style=true;
@@ -879,11 +950,12 @@ static struct option mpost_options[]
       }   
     } else if (ARGUMENT_IS("halt-on-error")) {
       options->halt_on_error = true;
+    } else if (ARGUMENT_IS("output-directory"))  {
+      output_directory = optarg ;
     } else if (ARGUMENT_IS("8bit") ||
                ARGUMENT_IS("parse-first-line")) {
       /* do nothing, these are always on */
     } else if (ARGUMENT_IS("translate-file") ||
-               ARGUMENT_IS("output-directory") ||
                ARGUMENT_IS("no-parse-first-line")) {
       fprintf(stdout,"warning: %s: unimplemented option %s\n", argv[0], argv[optind]);
     } 
@@ -891,9 +963,8 @@ static struct option mpost_options[]
   options->ini_version = (int)ini_version_test;
 }
 
-@  
-@<getopt structures@>=
-#define option_is(a) STREQ (dvitomp_options[optionid].name, a)
+@ @d option_is(a) STREQ (dvitomp_options[optionid].name, a)
+@<Structures for |getopt|@>=
 
 /* SunOS cc can't initialize automatic structs, so make this static.  */
 static struct option dvitomp_options[]
@@ -907,9 +978,9 @@ static struct option dvitomp_options[]
 
 
 @ 
-@<Read and set dvitomp command line options@>=
+@<Read and set \.{dvitomp} command line options@>=
 {
-  int g;   /* `getopt' return code.  */
+  int g;   /* `|getopt|' return code.  */
   int optionid;
   for (;;) {
     g = getopt_long_only (argc, argv, "+", dvitomp_options, &optionid);
@@ -970,6 +1041,7 @@ fprintf(stdout,
 "                            the bits of NUMBER\n"
 "  -mem=MEMNAME or &MEMNAME  use MEMNAME instead of program name or a %%& line\n"
 "  -recorder                 enable filename recorder\n"
+"  -restricted               be secure: disable tex, makempx and editor commands\n"
 "  -troff                    set prologues:=1 and assume TEXPROGRAM is really troff\n"
 "  -s INTERNAL=\"STRING\"      set internal INTERNAL to the string value STRING\n"
 "  -s INTERNAL=NUMBER        set internal INTERNAL to the integer value NUMBER\n"
@@ -1040,6 +1112,7 @@ stored in the \MP\ instance, this will be taken as the first line of
 input.
 
 @d command_line_size 256
+@d max_command_line_size 0xFFFFFFF /* should be the same of |max_halfword| (see |mp_reallocate_buffer|) */
 
 @<Copy the rest of the command line@>=
 {
@@ -1047,18 +1120,28 @@ input.
   options->command_line = mpost_xmalloc(command_line_size);
   strcpy(options->command_line,"");
   if (optind<argc) {
+    int optind_aux = optind;
+    size_t buflen = 0;
+    for(;optind_aux<argc;optind_aux++) {
+      buflen +=(strlen(argv[optind_aux])+1); /* reserve space for |' '| as separator */
+    }
+    /* Last char is |' '|, no need to reserve space for final |'\0'| */
+    if (buflen > max_command_line_size) {
+        fprintf(stderr,"length of command line too long!\n");
+    	exit(EXIT_FAILURE);
+    }
+    mpost_xfree(options->command_line);
+    options->command_line = mpost_xmalloc(buflen);
     k=0;
     for(;optind<argc;optind++) {
       char *c = argv[optind];
       while (*c != '\0') {
-	    if (k<(command_line_size-1)) {
-          options->command_line[k++] = *c;
-        }
+        options->command_line[k++] = *c;
         c++;
       }
       options->command_line[k++] = ' ';
     }
-	while (k>0) {
+    while (k>0) {
       if (options->command_line[(k-1)] == ' ') 
         k--; 
       else 
@@ -1068,7 +1151,7 @@ input.
   }
 }
 
-@ A simple function to get numerical |texmf.cnf| values
+@ A simple function to get numerical \.{texmf.cnf} values
 @c
 static int setup_var (int def, const char *var_name, boolean nokpse) {
   if (!nokpse) {
@@ -1275,15 +1358,16 @@ if (options->job_name != NULL) {
       }
     } else {
       job_name = tmp_job;
-      /* |job_area| stays NULL */
+      /* |job_area| stays |NULL| */
     }
   }
 }
 }
 options->job_name = job_name;
 
-@ We |#define DLLPROC dllmpostmain| in order to build \MP\ as DLL for
-W32\TeX.
+@ We |
+#define DLLPROC dllmpostmain
+| in order to build \MP\ as DLL for W32\TeX.
 
 @<Declarations@>=
 #define DLLPROC dllmpostmain
@@ -1313,22 +1397,30 @@ DLLPROC (int argc, char **argv)
 #else
 main (int argc, char **argv)
 #endif
-{ /* |start_here| */
+@;
+{ @t\1@> /* |start_here| */
   int k; /* index into buffer */
   int history; /* the exit status */
   MP mp; /* a metapost instance */
   struct MP_options * options; /* instance options */
-  char *user_progname = NULL; /* If the user overrides |argv[0]| with {\tt -progname}.  */
+  char *user_progname = NULL; /* If the user overrides |argv[0]| with \.{-progname}. */
   options = mp_options();
   options->ini_version       = (int)false;
   options->print_found_names = (int)true;
   {
     const char *base = cleaned_invocation_name(argv[0]);
+    if (FILESTRCASEEQ(base, "rmpost")){
+      base++;
+      restricted_mode = true;
+    } else if (FILESTRCASEEQ(base, "r-mpost")){
+      base += 2;
+      restricted_mode = true;
+    }
     if (FILESTRCASEEQ(base, "dvitomp"))
       dvitomp_only=1;
   }
   if (dvitomp_only) {
-    @<Read and set dvitomp command line options@>;
+    @<Read and set \.{dvitomp} command line options@>;
   } else {
     @<Read and set command line options@>;
   }
@@ -1356,7 +1448,11 @@ main (int argc, char **argv)
   if (!nokpse) {
     kpse_set_program_enabled (kpse_mem_format, MAKE_TEX_FMT_BY_DEFAULT,
                               kpse_src_compile);
-    kpse_set_program_name(argv[0], user_progname);  
+    kpse_set_program_name(argv[0], user_progname);
+    if (FILESTRCASEEQ(kpse_program_name, "rmpost"))
+      kpse_program_name++;
+    else if (FILESTRCASEEQ(kpse_program_name, "r-mpost"))
+      kpse_program_name += 2;
   }
   @= /*@@=nullpass@@*/ @> 
   if(putenv(xstrdup("engine=metapost")))
@@ -1389,4 +1485,7 @@ main (int argc, char **argv)
 	exit(history);
   else
      exit(0);
+@t\8@>
 }
+
+@* Index.

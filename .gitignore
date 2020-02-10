@@ -1,2 +1,5 @@
 /build/
 autom4te.cache/
+configure
+Makefile.in
+aclocal.m4

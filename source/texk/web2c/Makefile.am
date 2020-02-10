@@ -13,7 +13,7 @@ AM_OBJCXXFLAGS = ## $(WARNING_OBJCXXFLAGS)
 
 version = $(WEB2CVERSION)
 
-SUBDIRS = doc lib man web2c . window omegafonts otps
+SUBDIRS = doc lib man web2c . window omegafonts
 
 proglib = lib/lib.a
 
@@ -248,9 +248,6 @@ include $(srcdir)/omegaware/am/omegaware.am
 
 ## Aleph
 include $(srcdir)/alephdir/am/aleph.am
-
-## SyncTeX, must come after all TeX-like engines
-include $(srcdir)/synctexdir/am/synctex.am
 
 ## libmd5
 include $(srcdir)/libmd5/am/md5.am

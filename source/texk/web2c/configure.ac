@@ -402,9 +402,6 @@ AC_CONFIG_FILES([tangle-sh], [chmod +x tangle-sh])
 AC_CONFIG_FILES([ctangleboot-sh], [chmod +x ctangleboot-sh])
 AC_CONFIG_FILES([silent-sh], [chmod +x silent-sh])
 
-dnl Additional code for synctex
-m4_sinclude([synctexdir/ac/synctex.ac])
-
 dnl The subdirectory web2c must be configured for the build system.
 KPSE_NATIVE_SUBDIRS([web2c])
 

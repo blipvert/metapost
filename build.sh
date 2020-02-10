@@ -125,7 +125,21 @@ then
     --disable-shared    \
     --disable-largefile \
     --disable-ptex \
-    --enable-mp  \
+    --disable-mf \
+    --disable-mflua \
+    --disable-mfluajit \
+    --disable-pmp \
+    --disable-upmp \
+    --disable-ptex \
+    --disable-eptex \
+    --disable-uptex \
+    --disable-euptex \
+    --disable-aleph \
+    --disable-pdftex \
+    --disable-luatex \
+    --disable-luajittex \
+    --disable-synctex \
+    --enable-mp \
     --enable-web2c \
     --enable-compiler-warnings=max \
     --without-system-harfbuzz \

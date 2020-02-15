@@ -36,7 +36,7 @@ MINGWCROSS64=FALSE
 PPCCROSS=FALSE
 JOBS_IF_PARALLEL=4
 MAX_LOAD_IF_PARALLEL=4.0
-CONFPREFIX=
+CONFPREFIX="--prefix=/opt/metapost"
 
 while [ "$1" != "" ] ; do
   if [ "$1" = "--make" ] ;

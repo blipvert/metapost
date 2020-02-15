@@ -122,6 +122,7 @@ if [ "$ONLY_MAKE" = "FALSE" ]
 then
 ../source/configure  $CONFHOST $CONFPREFIX \
     --disable-all-pkgs \
+    --disable-native-texlive-build \
     --disable-shared    \
     --disable-largefile \
     --disable-ptex \
@@ -147,7 +148,7 @@ then
     --without-system-libpng \
     --without-ptexenc \
     --without-system-ptexenc \
-    --without-system-kpathsea \
+    --with-system-kpathsea \
     --without-system-xpdf \
     --without-system-freetype \
     --without-system-freetype2 \

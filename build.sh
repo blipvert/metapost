@@ -136,6 +136,7 @@ then
     --disable-uptex \
     --disable-euptex \
     --disable-aleph \
+    --disable-xetex \
     --disable-pdftex \
     --disable-luatex \
     --disable-luajittex \
@@ -143,21 +144,24 @@ then
     --enable-mp \
     --enable-web2c \
     --enable-compiler-warnings=max \
-    --without-system-harfbuzz \
-    --without-system-cairo \
-    --without-system-libpng \
+    --with-system-mpfr \
+    --with-system-gmp \
+    --with-system-harfbuzz \
+    --with-system-cairo \
+    --with-system-libpng \
     --without-ptexenc \
-    --without-system-ptexenc \
+    --with-system-ptexenc \
     --with-system-kpathsea \
-    --without-system-xpdf \
-    --without-system-freetype \
-    --without-system-freetype2 \
-    --without-system-gd \
-    --without-system-teckit \
-    --without-system-t1lib \
-    --without-system-icu \
-    --without-system-graphite \
-    --without-system-zziplib \
+    --with-system-xpdf \
+    --with-system-freetype \
+    --with-system-freetype2 \
+    --with-system-gd \
+    --with-system-teckit \
+    --with-system-t1lib \
+    --with-system-icu \
+    --with-system-graphite \
+    --with-system-zziplib \
+    --with-system-poppler \
     --without-mf-x-toolkit --without-x \
     || exit 1 
 fi

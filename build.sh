@@ -130,22 +130,29 @@ then
     --disable-native-texlive-build \
     --disable-shared    \
     --disable-largefile \
-    --disable-ptex \
     --disable-mf \
     --disable-mflua \
     --disable-mfluajit \
     --disable-pmp \
     --disable-upmp \
+    --disable-synctex \
+    --disable-tex-synctex \
+    --disable-etex-synctex \
     --disable-ptex \
+    --disable-ptex-synctex \
     --disable-eptex \
+    --disable-eptex-synctex \
     --disable-uptex \
+    --disable-uptex-synctex \
     --disable-euptex \
+    --disable-euptex-synctex \
     --disable-aleph \
     --disable-xetex \
+    --disable-xetex-synctex \
     --disable-pdftex \
+    --disable-pdftex-synctex \
     --disable-luatex \
     --disable-luajittex \
-    --disable-synctex \
     --enable-mp \
     --enable-web2c \
     --enable-compiler-warnings=max \

@@ -105,7 +105,7 @@ esac
 # ----------
 # autoconfigure if necessary
 
-[ -x ./source/configure ] || ( cd ./source && ./reautoconf )
+( cd ./source && ./reautoconf )
 
 # ----------
 # clean up, if needed

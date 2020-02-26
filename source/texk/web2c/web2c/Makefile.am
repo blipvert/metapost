@@ -11,8 +11,10 @@ if ENABLE_WEB2C_INSTALL
 web2clibdir = $(libdir)/web2c
 web2clib_PROGRAMS = web2c fixwrites splitup makecpool
 web2clib_DATA = $(web2c_data)
+web2clib_HEADERS = coerce.h
 else
 noinst_PROGRAMS = web2c fixwrites splitup makecpool
+noinst_HEADERS = coerce.h
 dist_noinst_DATA = $(web2c_data)
 endif
 
@@ -36,8 +38,6 @@ w2c/config.h: ../w2c/config.h
 	  fi; \
 	  test -f $@; \
 	fi
-
-noinst_HEADERS = coerce.h
 
 dist_noinst_SCRIPTS = convert
 

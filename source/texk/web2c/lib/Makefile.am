@@ -9,7 +9,15 @@ AM_CFLAGS = $(WARNING_CFLAGS)
 ## Rebuild libkpathsea
 @KPATHSEA_RULE@
 
+if ENABLE_WEB2C_INSTALL
+web2clibdir = $(libdir)/web2c
+web2clib_LIBRARIES = lib.a
+web2clib_HEADERS = lib.h
+noinst_LIBRARIES =
+else
 noinst_LIBRARIES = lib.a
+endif
+
 if PTEX
 noinst_LIBRARIES += libp.a
 endif PTEX

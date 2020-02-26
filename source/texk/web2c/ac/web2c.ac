@@ -84,3 +84,9 @@ AC_ARG_ENABLE([synctex],
                              [do not build the SyncTeX library and tool],
                              kpse_indent_26))[]dnl
 
+AC_ARG_ENABLE(web2c-install,
+   [AC_HELP_STRING([--enable-web2c-install],
+                   [install WEB2C support files [default=no]])],
+   [enable_web2c_install=$enableval], [enable_web2c_install=no])
+
+AM_CONDITIONAL(ENABLE_WEB2C_INSTALL, [test "x$enable_web2c_install" = xyes])

@@ -28,6 +28,9 @@ KPSE_COMMON([web2c convert])
 AC_PROG_YACC
 KPSE_PROG_LEX
 
+KPSE_WEB2C_PREPARE
+m4_include([../ac/web2c.ac])
+
 AC_CHECK_FUNCS([strerror])
 AC_CHECK_HEADERS([errno.h])
 AC_CHECK_SIZEOF([int])

@@ -155,6 +155,7 @@ then
     --disable-luajittex \
     --enable-mp \
     --enable-web2c \
+    --enable-web2c-install \
     --enable-compiler-warnings=max \
     --with-system-mpfr \
     --with-system-gmp \

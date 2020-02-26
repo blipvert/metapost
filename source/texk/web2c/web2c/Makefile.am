@@ -7,7 +7,14 @@ AM_CPPFLAGS = -I$(srcdir)/../..
 AM_YFLAGS = -d -v
 AM_CFLAGS = $(WARNING_CFLAGS)
 
+if ENABLE_WEB2C_INSTALL
+web2clibdir = $(libdir)/web2c
+web2clib_PROGRAMS = web2c fixwrites splitup makecpool
+web2clib_DATA = $(web2c_data)
+else
 noinst_PROGRAMS = web2c fixwrites splitup makecpool
+dist_noinst_DATA = $(web2c_data)
+endif
 
 EXTRA_LIBRARIES = libweb2c.a
 
@@ -34,7 +41,7 @@ noinst_HEADERS = coerce.h
 
 dist_noinst_SCRIPTS = convert
 
-dist_noinst_DATA = \
+web2c_data = \
 	common.defines \
 	cvtbib.sed \
 	cvtmf1.sed \
@@ -102,7 +109,7 @@ stamp-splitup: splitup$(EXEEXT)
 stamp-makecpool: makecpool$(EXEEXT)
 	$(AM_V_at)echo timestamp >$@
 
-CLEANFILES = $(nodist_noinst_DATA)
+CLEANFILES = $(web2c_data)
 
 distclean-local:
 	rm -rf kpathsea w2c
